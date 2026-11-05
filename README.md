@@ -70,3 +70,18 @@ merlin-compile --workload <model> --dtype int8 --target rvv --board iris_rtl --h
 `merlin-target-compose --check .` (run by `tests/`) fails when the rvv base this layer pins has moved.
 `tests/test_matrix_lowering.py` checks the adapter, the contract, the kernel's refusals and the stand-in's
 tiling against a reference on the host; with `MERLIN_CHIPYARD_IRIS` set it also runs the derivation.
+
+## The rvv base (`base/rvv-mlir`)
+
+This package is a layer on [rvv-mlir](https://github.com/ucb-bar/rvv-mlir): `contracts/overlay.yaml` holds only what
+this chip adds or changes, and `contracts/target_contract.yaml` is base + overlay, generated. The base is a submodule
+at `base/rvv-mlir`, pinned to the same commit as `extends.commit` in `provider.yaml` (a test keeps the two equal).
+
+```sh
+git clone --recurse-submodules -b handwritten-implementation https://github.com/ucb-bar/<this-repo>.git
+MERLIN_TARGET_PATH=base/rvv-mlir merlin-target-compose . --check     # is the generated contract fresh?
+```
+
+Changes that belong to every RVV chip go to rvv-mlir itself (commit and push there). Changes for this chip only go
+in `contracts/overlay.yaml` (use `replace:` / `remove:` to override a base fact). To move to a newer base:
+`git -C base/rvv-mlir checkout <sha>`, set `extends.commit` to the same sha, run `merlin-target-compose .`, commit.

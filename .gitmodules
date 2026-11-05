@@ -1,0 +1,4 @@
+[submodule "base/rvv-mlir"]
+	path = base/rvv-mlir
+	url = https://github.com/ucb-bar/rvv-mlir.git
+	branch = handwritten-implementation
