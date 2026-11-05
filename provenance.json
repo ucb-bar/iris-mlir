@@ -38,13 +38,31 @@
       "path": "vme_shim.py",
       "source": "this package",
       "change": "unit contract reader, geometry, kernel spec, build and simulator declaration",
-      "sha256": "e356679a102aec5eb628607a2436eb1eb21f6e6a83f81f7e14833cd447b268dd"
+      "sha256": "351ea17a992b800a9ae526cef65b5eaa0e7e9543ebf1b4366bc7565e3c64fb5a"
     },
     {
       "path": "matrix_lowering.py",
       "source": "this package",
       "change": "plugin adapter for merlin's MatrixRouting",
-      "sha256": "e81d262e6ea6740e2a7aad55afa1792d68e30c404aa774d3812de59271215584"
+      "sha256": "4bb38c7fa56e81b3e2758c7f30c7011dad2c23e9f3dc03bc1daf35391d062965"
+    },
+    {
+      "path": "kernels/kernels.yaml",
+      "source": "this package",
+      "change": "matrix kernel registry (merlin.matrix_kernels.v1): default generated kernel, hand-written kernels and their constraints",
+      "sha256": "0d6425127998f12942261545ff147623439d0448804afa9a392ddd8318f26dd5"
+    },
+    {
+      "path": "kernels/vme_api.h",
+      "source": "saturn@vme 536774b benchmarks/common/vme.h, vme_gemm.h",
+      "change": "vme.h API names over the generated saturn_vme.h; no instruction words",
+      "sha256": "c6a7a22d932e7e8dd18c4df8d1c9ff063fcff2d3c61214d4a6d7bb24b9b4671d"
+    },
+    {
+      "path": "kernels/vme_gemm_2x2_bias.c",
+      "source": "saturn@vme 536774b benchmarks/vme-fused-lm2-gemm-transpose/main.c (Miles Rusch)",
+      "change": "vme_gemm_2x2_bias ported to the matrix-kernel ABI, edges by vme_gemm_tiled",
+      "sha256": "3a3747279e4b6de7ff5f588d33e11ea1b2b43912422e8718c9524d13da83b1ff"
     }
   ],
   "generated": {

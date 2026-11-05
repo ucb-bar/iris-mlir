@@ -271,6 +271,9 @@ class VmeBuild:
     parallel_tiles: bool = False
     provenance: dict[str, Any] = field(default_factory=dict)
     gaps: tuple[str, ...] = ()
+    #: Which kernel the routed calls run: the generated one, or a hand-written one from kernels/ with the
+    #: sha256 of every file compiled (merlin.kernels.matrix_kernels).
+    kernel: dict[str, Any] = field(default_factory=lambda: dict(GENERATED_KERNEL_RECORD))
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -284,29 +287,99 @@ class VmeBuild:
             "parallel_tiles": self.parallel_tiles,
             "provenance": self.provenance,
             "gaps": list(self.gaps),
+            "kernel": dict(self.kernel),
         }
 
 
-def emit_translation_unit(signatures, contract: UnitContract, *, alignment_bytes: int, scratch_bytes=None):
-    """Derive, cross-check, emit: the kernel inside Merlin's generic descriptor-ABI shim."""
-    from merlin.kernels import matrix_shim
+#: The record of a build that runs the generated kernel (kernels/kernels.yaml registers it as `generated`).
+GENERATED_KERNEL_RECORD = {"name": "generated", "generated": True, "emitter": "iris-mlir vme_kernel.py"}
 
+
+def _resolved(contract: UnitContract):
     derived = derive_encodings(contract)
     if not derived.ok:
         raise ValueError(
             f"the encoding derivation for {contract.unit!r} is not resolved (gaps {list(derived.gaps)}, failed checks "
             f"{[c for c in derived.crosschecks if not c.get('agrees')]}); refusing to build from it"
         )
-    kernel = vme_kernel.emit_kernel(derived.encodings, contract.kernel_spec(), derivation_ok=derived.ok)
+    return derived
+
+
+def emit_translation_unit(signatures, contract: UnitContract, *, alignment_bytes: int, scratch_bytes=None, kernel=None):
+    """Derive, cross-check, emit: the kernel inside Merlin's generic descriptor-ABI shim.
+
+    ``kernel`` is a hand-written kernel already prepared by ``merlin.kernels.matrix_kernels``
+    (``PreparedKernel``: the text to paste and its function); None emits the generated kernel.
+    """
+    from merlin.kernels import matrix_shim
+
+    derived = _resolved(contract)
+    if kernel is None:
+        text = vme_kernel.emit_kernel(derived.encodings, contract.kernel_spec(), derivation_ok=derived.ok)
+        func = vme_kernel.KERNEL_FUNC
+    else:
+        text, func = kernel.source, kernel.function
     unit = matrix_shim.emit_translation_unit(
-        kernel,
-        vme_kernel.KERNEL_FUNC,
+        text,
+        func,
         signatures,
         alignment_bytes=alignment_bytes,
         prefix=SHIM_PREFIX,
         scratch_bytes=scratch_bytes,
     )
     return unit, derived
+
+
+def generated_kernel(*, unit: str, config: str) -> tuple[str, str]:
+    """``(C source, function)`` of the generated kernel exactly as a build emits it, for kernel-test."""
+    contract = load_contract(unit)
+    derived = _resolved(contract)
+    return vme_kernel.emit_kernel(derived.encodings, contract.kernel_spec(), derivation_ok=derived.ok), vme_kernel.KERNEL_FUNC
+
+
+def kernel_header_facts(*, unit: str, config: str) -> dict[str, tuple[int, str]]:
+    """What a hand-written kernel's generated header states besides the encodings, tile edge and alignment.
+
+    All of it is what the generated kernel uses: ``kmax`` and the two matrix configurations come from the
+    RTL (:meth:`UnitContract.kernel_spec`), the operand-layout positions from ``contracts/matrix_units.yaml``
+    (each with the source that states it). Spelled as the sf.msetmtype operands and the bit positions a
+    kernel ORs together, so a kernel never writes one of them as a literal.
+    """
+    spec = load_contract(unit).kernel_spec()
+    lay = spec.layout
+    op_sew, op_widen = spec.operand_type
+    rd_sew, rd_widen = spec.readout_type
+    # rd of sf.mm / sf.vtzero.t for the four tiles a 2x2 super-tile kernel uses (its choice, as in
+    # vme_gemm.h), as plain numbers so a header macro can paste them into an .insn operand.
+    tiles: dict[str, tuple[int, str]] = {}
+    for t in range(4):
+        tiles[f"MT_RD_{t}"] = (t << lay.tile_rd_shift, f"rd of tile {t}")
+        tiles[f"MTB_RD_{t}"] = ((t << lay.tile_rd_shift) | (1 << lay.a_signed_rd_bit), f"rd of tile {t}, A signed")
+    return {
+        **tiles,
+        "KSTEP": (spec.kstep, f"kmax at e{op_sew}w{op_widen}: reduction rows one sf.mm consumes (RTL MatrixConfig.kmax)"),
+        "ROW_STRIDE": (spec.row_stride, "vector registers between consecutive reduction rows of one sf.mm operand"),
+        "OPERAND_MTYPE": (spec.widen_code(op_widen) << lay.mtype_widen_lsb, f"sf.msetmtype rs1 for e{op_sew}w{op_widen}"),
+        "OPERAND_VTYPE": (spec.sew_code << lay.vtype_sew_lsb, f"sf.msetmtype rs2 for e{op_sew} (B unsigned)"),
+        "OPERAND_VTYPE_BSIGNED": (
+            (spec.sew_code << lay.vtype_sew_lsb) | (1 << lay.vtype_altfmt_bit),
+            f"sf.msetmtype rs2 for e{op_sew} with altfmt: B signed",
+        ),
+        "READOUT_MTYPE": (spec.widen_code(rd_widen) << lay.mtype_widen_lsb, f"sf.msetmtype rs1 for e{rd_sew}w{rd_widen}"),
+        "READOUT_VTYPE": (spec.readout_sew_code << lay.vtype_sew_lsb, f"sf.msetmtype rs2 for e{rd_sew}"),
+        "TILE_RD_SHIFT": (lay.tile_rd_shift, "tile index position in rd of sf.mm / sf.vtzero.t"),
+        "A_SIGNED_RD_BIT": (lay.a_signed_rd_bit, "rd bit of sf.mm that makes A signed"),
+        "TSS_TILE_LSB": (lay.tss_tile_lsb, "tile subset specifier: tile field"),
+        "TSS_TILE_SCALE": (lay.tss_tile_scale, "tile index t is tile specifier TSS_TILE_SCALE * t"),
+        "TSS_PATTERN_LSB": (lay.tss_pattern_lsb, "tile subset specifier: pattern field"),
+        "TSS_ROW_PATTERN": (lay.tss_row_pattern, "pattern value selecting a row"),
+        "MSTATUS_MS": (
+            ((1 << lay.mstatus_ms_width) - 1) << lay.mstatus_ms_lsb,
+            "mstatus.MS (matrix state): set before the first matrix instruction on each hart",
+        ),
+        "OPERAND_BITS": (spec.operand_bits, "int8 operands"),
+        "ACC_BITS": (spec.acc_bits, "int32 accumulators"),
+    }
 
 
 def build_object(
@@ -321,8 +394,15 @@ def build_object(
     parallel_tiles: bool = False,
     scratch_bytes: int | None = None,
     contract_path: str | Path | None = None,
+    kernel: Any = None,
 ) -> VmeBuild:
-    """Derive the unit's facts, emit the translation unit, compile it, record what it came from."""
+    """Derive the unit's facts, emit the translation unit, compile it, record what it came from.
+
+    ``kernel`` (a ``merlin.kernels.matrix_kernels.KernelChoice``) replaces the generated kernel with a
+    hand-written one from ``kernels/``: the shim includes a snapshot of its file beside the generated
+    header, and the stand-in twin (``scalar_tile``) compiles Merlin's scalar reference under the same name.
+    None (the default) is the generated kernel, byte for byte as before.
+    """
     from merlin.common import provenance as PROV
 
     work = Path(work)
@@ -340,8 +420,13 @@ def build_object(
             gaps.append(f"pin {name} drifted: {'; '.join([*ver.drift, *map(str, ver.missing_paths)])}")
 
     tile_edge, alignment = contract.geometry(config)
+    kernel_record = dict(GENERATED_KERNEL_RECORD)
+    prepared = None
+    if kernel is not None:
+        prepared = kernel.prepare(work, scalar_tile=scalar_tile)
+        kernel_record = prepared.record
     unit_src, derived = emit_translation_unit(
-        signatures, contract, alignment_bytes=alignment, scratch_bytes=scratch_bytes
+        signatures, contract, alignment_bytes=alignment, scratch_bytes=scratch_bytes, kernel=prepared
     )
     src = work / "merlin_vme_shim.c"
     src.write_text(str(unit_src), encoding="utf-8")
@@ -360,6 +445,8 @@ def build_object(
         sources=[contract.source(k) for k in sorted(contract.sources)] + [contract.core_source()],
         artifacts={"shim_object": obj, "shim_source": src},
     )
+    # Which kernel the bytes came from: the image's provenance names it, and a hand-written one by sha256.
+    prov["matrix_kernel"] = kernel_record
     return VmeBuild(
         object_path=obj,
         source_path=src,
@@ -371,4 +458,5 @@ def build_object(
         parallel_tiles=parallel_tiles,
         provenance=prov,
         gaps=tuple(gaps),
+        kernel=kernel_record,
     )

@@ -1,0 +1,47 @@
+# The VME unit's matrix kernels: which one every routed int8 contraction calls.
+#
+# Select one with `--matrix-kernel <name>` (examples/iris/run.sh op|kernel-test, or MERLIN_MATRIX_KERNEL),
+# or `--matrix-kernel path/to/file.c[:function]` for a file outside this directory. Unselected, the unit's
+# `defaults:` entry is used. Read by merlin.kernels.matrix_kernels.
+#
+# Every hand-written kernel:
+#   * defines   void <function>(int32_t *c, const int8_t *at, const int8_t *b, const int32_t *bias,
+#                               size_t m, size_t n, size_t k)        (VME_KERNEL(<function>) spells it)
+#   * includes  the header named below, or vme_api.h (vme.h's API on top of it). Merlin WRITES the header at
+#               build time from the encodings it derives from the unit's RTL (do not create a file with that
+#               name here); a kernel may include any other .h in this directory.
+#   * declares  in `constraints` the shapes it takes. Merlin refuses a build that would hand it any other,
+#               naming each contraction and the rule; kernel-test sweeps only the shapes it declares.
+#               Keys (all optional, default: any shape): m_multiple, n_multiple, k_multiple (granularity),
+#               max_m, max_n, max_k, each an integer or relative to the tile edge ("tile", "2*tile");
+#               bias: false if it ignores a non-NULL bias.
+#
+# Its stand-in twin is Merlin's scalar reference with the same ABI, so a build that passes means the kernel
+# computed exactly what the reference computes, on the shapes the model routed.
+schema: merlin.matrix_kernels.v1
+
+header:
+  file: saturn_vme.h
+  prefix: VME
+
+defaults:
+  saturn_vme: generated
+
+kernels:
+  generated:
+    unit: saturn_vme
+    generated: true
+    description: >-
+      The kernel vme_kernel.py emits from the RTL-derived encodings: vme_gemm.h's 2x2 super-tile, clamped
+      single tiles at the edges, kmax and the tile edge re-read from the hardware, an OpenMP block split.
+
+  vme_gemm_2x2_bias:
+    unit: saturn_vme
+    file: vme_gemm_2x2_bias.c
+    function: vme_gemm_2x2_bias
+    author: Miles Rusch (saturn vme benchmarks), ported to the kernel ABI
+    description: >-
+      vme_gemm_2x2_bias from benchmarks/vme-fused-lm2-gemm-transpose, written against vme_api.h:
+      four tiles zeroed with sf.vtzero.t, kmax rows per sf.mm, bias added on the way out; edges by
+      vme_gemm_tiled's one-tile loop. The starting point for a kernel of your own.
+    constraints: {}
