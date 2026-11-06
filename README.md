@@ -58,17 +58,18 @@ Facts derived from the pinned sources (Merlin's `merlin/contract/hardware_pins.y
   functional one under the Zvt draft's semantics, not an RTL one, and its counts are not Iris cycles.
 * Matrix images use **harts 0–1 only** (`boards.yaml` `matrix_hart_ids`); a 3-hart matrix image is refused.
 
-### Iris RTL smoke test (2026-11-05)
+### Iris RTL smoke tests (2026-11-05 to 2026-11-06)
 
-The pinned `IrisNoTraceConfig` Verilator simulator ran the shipped VME kernel object with two
-one-case bare-metal drivers. Each driver has buffers sized for its case; neither ELF was manually
-edited, and both load through the ordinary SerialTL path. Pinned Zvt Spike and Iris RTL agreed on
-all outputs, with no mismatches or guard writes, and both images printed `KT DONE`:
+The pinned `IrisNoTraceConfig` Verilator simulator ran the shipped VME kernel object with three
+one-case bare-metal drivers. Each driver has buffers sized for its case; none of the ELFs was manually
+edited, and all three load through the ordinary SerialTL path. Pinned Zvt Spike and Iris RTL agreed on
+all outputs, with no mismatches or guard writes, and all three images printed `KT DONE`:
 
 | Case | Outputs | Output digest | RTL kernel cycles | ELF SHA-256 |
 | --- | ---: | --- | ---: | --- |
 | 1×1×1 | 1 | `0x4d50163cec202f6d` | 10,825 | `e12b096c0d2ddcd6de700a3a6f58a6e31d3aa32a7200f6000b7ba939c08e83ac` |
 | 32×32×4 full tile | 1,024 | `0xb5bb00c34e1e5079` | 13,118 | `548385b064bcac22efb04403e86bc752e423ca113a4fc4faf7aa52da52ab0bf3` |
+| 32×32×33 K-tail | 1,024 | `0x921f37902c10b2fa` | 6,627 | `b2a556bf00eeeb613a5d1368618f963fbe4675337d9e16b67d266a8e327d0312` |
 
 These cycle counts are observed kernel intervals for the stated cases, not matrix-array occupancy.
 The full 44-case kernel-test ELF passed pinned Zvt Spike, but its bounded Iris RTL run did not
@@ -77,6 +78,15 @@ a three-million-cycle RTL run produced no `KT BEGIN`. A separate diagnostic ELF 
 host's zero writes reached `KT BEGIN one_tile` and returned from the VME kernel, but timed out
 before its scalar comparison. That edited ELF is diagnostic evidence only. The full 44-case RTL
 verdict remains pending.
+
+The K-tail driver's exact pinned Zvt Spike digest matched its direct RTL run with zero mismatches,
+unwritten outputs or guard errors; it reached `KT DONE` in 442 seconds of host wall time. A
+larger three-case ELF (K33, biased edge, batch) passed pinned Spike but has no complete RTL
+verdict. This configuration uses SerialRAM through SerialTL with no SimDRAM memory port, so
+`+loadmem` silently skips program writes and must not be used as a fast boot path. Its 30 KiB BSS
+also makes a short direct-run timeout inconclusive: the 10 KiB K-tail image first reached
+`KT BEGIN` after about five minutes. Split additional cases into small one-case drivers or build
+a separately validated fast-memory simulation configuration before claiming the full suite.
 
 ## Use
 
