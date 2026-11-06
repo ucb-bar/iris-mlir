@@ -12,6 +12,9 @@ boards:
   # vLen=256/dLen=256), so all three harts carry V at the same VLEN. DRAM is the serial-TL manager's RAM
   # (ManagerRAMParams address 0x80000000, size 0x100000000). The in-sim TSI link loads the image.
   iris_rtl:
+    matrix_support_target: iris
+    matrix_unit: saturn_vme
+    matrix_config: IrisConfig
     zephyr_board: chipyard_riscv64
     dt_cpu_nodes: 8
     dram_bytes: 4 GiB

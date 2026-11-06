@@ -19,8 +19,8 @@
     {
       "path": "boards.yaml",
       "source": "chipyard@iris-cy b4542fa: IrisConfigs.scala",
-      "change": "board facts read from the config",
-      "sha256": "4da1b7d5951f8b3d5b641df4827802226cac18ede24e6acd1cfab66ad71a83b3"
+      "change": "board facts read from the config, with explicit Iris VME matrix decoder identity",
+      "sha256": "6ab2998287366ad7644cfe9dc20d1e8cfdb07f31e6e5fb7f9739e6edadd05ed4"
     },
     {
       "path": "contracts/matrix_units.yaml",

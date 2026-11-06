@@ -44,6 +44,7 @@ def test_boards_describe_irisconfig():
     assert (rtl.dram_base, rtl.dram_bytes) == (0x80000000, 4 << 30)
     # The Rocket DMA hart has a vector unit and no matrix unit.
     assert rtl.matrix_harts == (0, 1)
+    rtl.check_matrix_route("iris", "saturn_vme", "IrisConfig")
     rtl.check_matrix_image(2)
     try:
         rtl.check_matrix_image(3)
