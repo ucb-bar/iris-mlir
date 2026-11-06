@@ -31,14 +31,14 @@
     {
       "path": "vme_kernel.py",
       "source": "saturn@vme 536774b benchmarks/common/vme_gemm.h, vme-fused-lm2-gemm-transpose",
-      "change": "int8 GEMM microkernel emitter modeled on the reference kernels; words from the derived table",
-      "sha256": "7fa03e05eec8bcd4e9289b1a71c7fc5320b9f1676061624279538cb7a2f9cd27"
+      "change": "thin compatibility import of Merlin's shared contract-bound Zvt kernel emitter",
+      "sha256": "6b61f083302fc1259c076a0a4b0cb09717e63f60b522d0e8a1915c995c4272a8"
     },
     {
       "path": "vme_shim.py",
       "source": "this package",
-      "change": "unit contract reader, geometry, kernel spec, build and simulator declaration",
-      "sha256": "351ea17a992b800a9ae526cef65b5eaa0e7e9543ebf1b4366bc7565e3c64fb5a"
+      "change": "thin Iris contract binding over Merlin's shared Zvt shim and source pin derivation",
+      "sha256": "9c602ec92cf5bc4ec49bfbba7ef5ad7b0c6311e8c47ab29274fb168af732672f"
     },
     {
       "path": "matrix_lowering.py",
