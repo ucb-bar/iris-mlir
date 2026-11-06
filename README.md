@@ -81,12 +81,25 @@ verdict remains pending.
 
 The K-tail driver's exact pinned Zvt Spike digest matched its direct RTL run with zero mismatches,
 unwritten outputs or guard errors; it reached `KT DONE` in 442 seconds of host wall time. A
-larger three-case ELF (K33, biased edge, batch) passed pinned Spike but has no complete RTL
-verdict. This configuration uses SerialRAM through SerialTL with no SimDRAM memory port, so
-`+loadmem` silently skips program writes and must not be used as a fast boot path. Its 30 KiB BSS
-also makes a short direct-run timeout inconclusive: the 10 KiB K-tail image first reached
-`KT BEGIN` after about five minutes. Split additional cases into small one-case drivers or build
-a separately validated fast-memory simulation configuration before claiming the full suite.
+larger three-case ELF then completed through the ordinary SerialTL path in 1,192.40 seconds of
+host wall time. Its exact ELF SHA-256 is
+`554a0ea2d8e8518c6b5e536ca8b4d16e45c1e310e4e5ff2932785c7c3d1fdd5c`. Each case
+matched pinned Zvt Spike and its scalar reference with zero mismatches, unwritten outputs, or
+guard writes:
+
+| Combined RTL case | Output digest | RTL kernel cycles |
+| --- | --- | ---: |
+| 32×32×33 K-tail | `0x921f37902c10b2fa` | 6,397 |
+| 35×63×33 biased edge | `0x15d98143c9a17f64` | 9,771 |
+| Three 32×33×17 batches | `0x250de050092f3504` | 9,126 |
+
+The [three-case receipt](evidence/zvt_three_case_20261106/receipt.json) includes the pinned
+simulator, Spike, ELF, kernel, driver, and transcript hashes; the transcripts are beside it.
+This configuration uses SerialRAM through SerialTL with no SimDRAM memory port, so `+loadmem`
+silently skips program writes and must not be used as a fast boot path. Its 30 KiB BSS explains
+why the earlier five-minute direct attempt was inconclusive. The full 44-case RTL suite remains
+unverified; a separately validated fast-memory configuration or smaller one-case drivers are
+needed to finish it.
 
 ## Use
 

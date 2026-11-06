@@ -1,0 +1,131 @@
+{
+  "schema": "iris.zvt_three_case_direct_serialtl_rtl.v1",
+  "date": "2026-11-06",
+  "config": "IrisNoTraceConfig",
+  "loader": "direct SerialTL; +loadmem absent",
+  "host_timeout_seconds": 2700,
+  "target_max_cycles": 20000000,
+  "host_wall_seconds": 1192.4,
+  "simulator_sha256": "91c72ab6f8709a841be25621945a9bf68f431726497e1102743099365556b9b6",
+  "spike_sha256": "a343fa72383558d759e6ae0308673bf9587216b1175721a5b873f09766a8f9e5",
+  "isa": "rv64gcv_zfh_zvfh_zvl256b_zvt32t_zvt8e_zvti8i32mm",
+  "kernel_source_sha256": "3a3747279e4b6de7ff5f588d33e11ea1b2b43912422e8718c9524d13da83b1ff",
+  "kernel_object_sha256": "5ae627137b8dd626aa75abdd4fa7e252731553920b3f1d0bce6f61f1ce537e2c",
+  "driver_sha256": "d56c614bd8a1b0285afa2a1790479fac7064a9aa09aef7bf2d548a494cef0717",
+  "elf_sha256": "554a0ea2d8e8518c6b5e536ca8b4d16e45c1e310e4e5ff2932785c7c3d1fdd5c",
+  "spike_log_sha256": "13a582510b95576a493235172cc9b86f6e7eb0e033d91b9e1676aa1e40375cc9",
+  "rtl_log_sha256": "7bb1b2b986bf32359325ef2c5de0e6ba2da99e013e87d1dfcc9490a2f5eff135",
+  "spike_rc": 0,
+  "rtl_rc": 0,
+  "cases": [
+    {
+      "shape": {
+        "name": "k33_rtl",
+        "m": 32,
+        "n": 32,
+        "k": 33,
+        "bias": false,
+        "batch": 1,
+        "amplitude": 8,
+        "seed": 209,
+        "why": ""
+      },
+      "spike": {
+        "digest": "0x921f37902c10b2fa",
+        "kernel_cycles": 759,
+        "mismatches": 0,
+        "unwritten": 0,
+        "guard_bad": 0,
+        "first_slice": -1,
+        "first_index": -1,
+        "first_got": 0,
+        "first_want": 0
+      },
+      "rtl": {
+        "digest": "0x921f37902c10b2fa",
+        "kernel_cycles": 6397,
+        "mismatches": 0,
+        "unwritten": 0,
+        "guard_bad": 0,
+        "first_slice": -1,
+        "first_index": -1,
+        "first_got": 0,
+        "first_want": 0
+      }
+    },
+    {
+      "shape": {
+        "name": "bias_edges_rtl",
+        "m": 35,
+        "n": 63,
+        "k": 33,
+        "bias": true,
+        "batch": 1,
+        "amplitude": 8,
+        "seed": 329,
+        "why": ""
+      },
+      "spike": {
+        "digest": "0x15d98143c9a17f64",
+        "kernel_cycles": 2164,
+        "mismatches": 0,
+        "unwritten": 0,
+        "guard_bad": 0,
+        "first_slice": -1,
+        "first_index": -1,
+        "first_got": 0,
+        "first_want": 0
+      },
+      "rtl": {
+        "digest": "0x15d98143c9a17f64",
+        "kernel_cycles": 9771,
+        "mismatches": 0,
+        "unwritten": 0,
+        "guard_bad": 0,
+        "first_slice": -1,
+        "first_index": -1,
+        "first_got": 0,
+        "first_want": 0
+      }
+    },
+    {
+      "shape": {
+        "name": "batch3_rtl",
+        "m": 32,
+        "n": 33,
+        "k": 17,
+        "bias": false,
+        "batch": 3,
+        "amplitude": 8,
+        "seed": 345,
+        "why": ""
+      },
+      "spike": {
+        "digest": "0x250de050092f3504",
+        "kernel_cycles": 2915,
+        "mismatches": 0,
+        "unwritten": 0,
+        "guard_bad": 0,
+        "first_slice": -1,
+        "first_index": -1,
+        "first_got": 0,
+        "first_want": 0
+      },
+      "rtl": {
+        "digest": "0x250de050092f3504",
+        "kernel_cycles": 9126,
+        "mismatches": 0,
+        "unwritten": 0,
+        "guard_bad": 0,
+        "first_slice": -1,
+        "first_index": -1,
+        "first_got": 0,
+        "first_want": 0
+      }
+    }
+  ],
+  "verdict": "PASS: three-case direct RTL finished and matched pinned Zvt Spike and scalar reference for all outputs, guards, and digests",
+  "full_44_case_rtl": "unverified",
+  "rtl_raw_log_sha256": "79d1dc656690d0f02f4ee1f7409f9dd70c18092fa81d7fc5324ff275187ce870",
+  "rtl_transcript_normalization": "CRLF to LF only; source raw log retained in managed task .tmp"
+}

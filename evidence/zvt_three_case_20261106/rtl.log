@@ -1,0 +1,12 @@
+Script started on 2026-11-06 02:46:28-08:00 [COMMAND="timeout --signal=TERM --kill-after=30s 2700s '/scratch/agustin/merlin/tasks/chip-packages/.sub/agent-a1a129decec449d1d/merlin/out/build/rtl-sim/chipyard/sims/verilator/simulator-chipyard.harness-IrisNoTraceConfig' +permissive +permissive-off '/scratch/agustin/merlin/tasks/chip-packages/.tmp/iris_bounded_zvt_edges/kernel_test.elf' +max-cycles=20000000" <not executed on terminal>]
+[UART] UART0 is here (stdin/stdout).
+KT BEGIN k33_rtl
+KT CASE k33_rtl 0 0 -1 -1 0 0 0 0x921f37902c10b2fa 6397
+KT BEGIN bias_edges_rtl
+KT CASE bias_edges_rtl 0 0 -1 -1 0 0 0 0x15d98143c9a17f64 9771
+KT BEGIN batch3_rtl
+KT CASE batch3_rtl 0 0 -1 -1 0 0 0 0x250de050092f3504 9126
+KT DONE
+- /scratch/agustin/merlin/tasks/chip-packages/.sub/agent-a1a129decec449d1d/merlin/out/build/rtl-sim/chipyard/sims/verilator/generated-src/chipyard.harness.TestHarness.IrisNoTraceConfig/gen-collateral/TestDriver.v:158: Verilog $finish
+
+Script done on 2026-11-06 03:06:20-08:00 [COMMAND_EXIT_CODE="0"]
