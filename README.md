@@ -58,6 +58,26 @@ Facts derived from the pinned sources (Merlin's `merlin/contract/hardware_pins.y
   functional one under the Zvt draft's semantics, not an RTL one, and its counts are not Iris cycles.
 * Matrix images use **harts 0–1 only** (`boards.yaml` `matrix_hart_ids`); a 3-hart matrix image is refused.
 
+### Iris RTL smoke test (2026-11-05)
+
+The pinned `IrisNoTraceConfig` Verilator simulator ran the shipped VME kernel object with two
+one-case bare-metal drivers. Each driver has buffers sized for its case; neither ELF was manually
+edited, and both load through the ordinary SerialTL path. Pinned Zvt Spike and Iris RTL agreed on
+all outputs, with no mismatches or guard writes, and both images printed `KT DONE`:
+
+| Case | Outputs | Output digest | RTL kernel cycles | ELF SHA-256 |
+| --- | ---: | --- | ---: | --- |
+| 1×1×1 | 1 | `0x4d50163cec202f6d` | 10,825 | `e12b096c0d2ddcd6de700a3a6f58a6e31d3aa32a7200f6000b7ba939c08e83ac` |
+| 32×32×4 full tile | 1,024 | `0xb5bb00c34e1e5079` | 13,118 | `548385b064bcac22efb04403e86bc752e423ca113a4fc4faf7aa52da52ab0bf3` |
+
+These cycle counts are observed kernel intervals for the stated cases, not matrix-array occupancy.
+The full 44-case kernel-test ELF passed pinned Zvt Spike, but its bounded Iris RTL run did not
+complete. It has about 99 KiB of zero-initialized data sent over SerialTL before the test starts;
+a three-million-cycle RTL run produced no `KT BEGIN`. A separate diagnostic ELF that skipped the
+host's zero writes reached `KT BEGIN one_tile` and returned from the VME kernel, but timed out
+before its scalar comparison. That edited ELF is diagnostic evidence only. The full 44-case RTL
+verdict remains pending.
+
 ## Use
 
 ```sh
