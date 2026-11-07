@@ -10,6 +10,9 @@ profiling. Start with `IRIS_MODEL_ROOT=/path/to/iris-model ./simulator/iris-run 
 Its source handoff, calibration fixtures and measured accuracy limits are in
 `simulator/`; the full ±2% timing target remains unmet.
 
+Starting from a new machine? Follow [Develop Iris VME kernels](GETTING_STARTED.md)
+for repository setup, model capture, ELF builds, and the kernel iteration loop.
+
 ```
 rvv-mlir   (RVV codegen, feature and policy passes, schedules, contract)
  ├── kodiak-mlir   (+ BME OPU, + Kodiak boards)
