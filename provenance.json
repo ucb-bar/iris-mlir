@@ -31,20 +31,20 @@
     {
       "path": "vme_kernel.py",
       "source": "saturn@vme 536774b benchmarks/common/vme_gemm.h, vme-fused-lm2-gemm-transpose",
-      "change": "thin compatibility import of Merlin's shared contract-bound Zvt kernel emitter",
-      "sha256": "6b61f083302fc1259c076a0a4b0cb09717e63f60b522d0e8a1915c995c4272a8"
+      "change": "VME kernel emitter extracted from Merlin into this package",
+      "sha256": "c0e992c3f1fbb6530ed0bc6659cd08bfd9f30da61f50e6685b379c61ae579acc"
     },
     {
       "path": "vme_shim.py",
       "source": "this package",
-      "change": "thin Iris contract binding over Merlin's shared Zvt shim and source pin derivation",
-      "sha256": "9c602ec92cf5bc4ec49bfbba7ef5ad7b0c6311e8c47ab29274fb168af732672f"
+      "change": "VME contract, encoding, and object builder extracted from Merlin into this package; shared descriptor ABI remains in Merlin",
+      "sha256": "5fc80512de67087278885a5ca232674f97350cb738e90c4e7afc935195005887"
     },
     {
       "path": "matrix_lowering.py",
       "source": "this package",
-      "change": "plugin adapter for merlin's MatrixRouting",
-      "sha256": "4bb38c7fa56e81b3e2758c7f30c7011dad2c23e9f3dc03bc1daf35391d062965"
+      "change": "plugin adapter for Merlin MatrixRouting, formatted without behavior change",
+      "sha256": "f3ad82d5f3d9910452fb8367bfabf0d7ce5016d6b26f87561fd41f3712094bd9"
     },
     {
       "path": "kernels/kernels.yaml",

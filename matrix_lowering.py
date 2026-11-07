@@ -49,7 +49,18 @@ def load_signatures(work):
     return int8_contractions.load_sidecar(work, vme_shim.SIDECAR_NAME)
 
 
-def build_object(signatures, work, *, unit, config, cc, cflags, scalar_tile=False, parallel_tiles=False, kernel=None):
+def build_object(
+    signatures,
+    work,
+    *,
+    unit,
+    config,
+    cc,
+    cflags,
+    scalar_tile=False,
+    parallel_tiles=False,
+    kernel=None,
+):
     """``kernel``: a hand-written kernel Merlin selected from ``kernels/kernels.yaml``
     (``merlin.kernels.matrix_kernels.KernelChoice``); None builds the generated kernel exactly as before."""
     extra = {} if kernel is None else {"kernel": kernel}
