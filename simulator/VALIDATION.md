@@ -4,12 +4,22 @@
 
 The native model is now pinned from
 `copparihollmann/riscv-isa-sim-gemmini`, branch `iris-model`, commit
-`f510cee1dede08bc0747f50f6933809304a30cb5`. Its README starts with the
+`4f69efc8ff9ae3282c84b696c781b0e4faac909b`. Its README starts with the
 capability and single-hart/multicore timing tables. Seven focused admission tests
 cover both the archived frozen route and rejection of a development provider
 that differs from the pinned fork.
 
-A clean fork build produced native SHA256
+The latest native build is
+`12e51b98964125d6b18e7172efc92f7bdc0ad95ee4259f33aed98856a5764cad`.
+It fixes a speculative lookahead into unreachable bytes after a compressed
+return, while actual execution of undefined instruction bytes still refuses.
+It passed all 45 Merlin quick VME kernel shapes, the original 32 functional
+guests, the normal three-hart Zephyr smoke with nine checked region checksums,
+and eight directed regression outcomes. Exact receipts are bound in
+[`speculative-fetch-validation.json`](spike-model/iris/provenance/speculative-fetch-validation.json).
+These functional tests do not qualify new timing accuracy.
+
+The initial clean fork build produced native SHA256
 `cc9767615437f72ce7200d75df2aea39d6769a77b9a953c9c5c9bfc0d097c9ea`.
 It passed all 32 directed functional cases and the baremetal, Zephyr and
 profiling smokes with byte-identical frozen-reference stdout. Profiling admitted
