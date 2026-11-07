@@ -186,6 +186,27 @@ shapes, and prints `C[i][j]: got X, reference Y` for the first wrong element, el
 writes past the end of C. `--matrix-kernel path/to/k.c[:function]` tries a file outside this directory.
 Merlin's side is documented in its `docs/guides/chip_packages.md` ("Write your own kernel").
 
+### End-to-end convolution route example
+
+From a set-up Merlin checkout with pinned Iris VME sources and Zvt Spike, run:
+
+```sh
+python3 /path/to/iris-mlir/examples/conv2d_kernel_demo.py /path/to/merlin
+```
+
+The example uses the registered `vme_gemm_2x2_bias` C kernel. It first runs the
+kernel's quick reference sweep, then asks Merlin to capture and lower its built-in
+16-input/64-output-channel convolution. Merlin recognizes its signed-int8
+contraction, chooses the VME route, converts the convolution's layout to the GEMM
+kernel ABI, and links the selected kernel into the shipped image. The checker
+requires routed convolution MACs, the selected C file's SHA-256 in the routing
+report, verified RVV and VME results, and a shipped Zvt Spike output bit-exact
+with the scalar twin. It prints the kept ELFs and routing receipt directory.
+
+This demonstrates Merlin's built-in W8A8 operator path. It does not establish
+TorchAO source-model fidelity, FPGA timing, or physical Iris execution. A plain
+`op` exit or a kernel-test pass alone is insufficient to establish the entire route.
+
 ## The rvv base (`base/rvv-mlir`)
 
 This package is a layer on [rvv-mlir](https://github.com/ucb-bar/rvv-mlir): `contracts/overlay.yaml` holds only what
