@@ -1,0 +1,4 @@
+# Preserve archived source bytes and patch context exactly as measured.
+simulator/spike/*.patch -whitespace
+simulator/merlin/*.patch -whitespace
+simulator/model-source/** -whitespace

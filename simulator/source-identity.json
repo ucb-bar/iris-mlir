@@ -1,0 +1,220 @@
+{
+  "repositories": {
+    "chipyard": {
+      "commit": "b4542facf6cc9457f6e358e8f80a8b3a0ff5df19",
+      "tracked_modified": true,
+      "tracked_diff_sha256": "03f32d1d00ad22b0f976a370632f10496fc0b57792e36dffa228c11d983a2ecd"
+    },
+    "saturn": {
+      "commit": "536774bd4c5e3bcd7813a4a0dc72fc87e5818532",
+      "tracked_modified": true,
+      "tracked_diff_sha256": "79e734508b780ddef01ca8eeb726bf5bbf0945f1998b4a4370e83df0ce4df60b"
+    },
+    "rocket-chip": {
+      "commit": "fc745a8c377fdbf1d278eea81da9ac47b4b5fbc0",
+      "tracked_modified": false,
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "shuttle": {
+      "commit": "a536ed1df91a0f65770e36758291d02a8cb929c4",
+      "tracked_modified": false,
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "testchipip": {
+      "commit": "86c9a824fd42b854526018f9111087b0f3d1d31c",
+      "tracked_modified": false,
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "spike_chipyard_pin": {
+      "commit": "9c190a07c6838f6392bafa4ad83acea462c7f759",
+      "tracked_modified": false,
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "firesim": {
+      "commit": "69b17767e0b227e31ea341c50899e49f02d6f5ea",
+      "tracked_modified": true,
+      "tracked_diff_sha256": "207d3b6cb1d022ca3d00c3ff9abe465f9e5934e2c7b999348505c3d9da8cd6a0"
+    }
+  },
+  "evidence_sources": {
+    "iris-config": {
+      "path": "generators/chipyard/src/main/scala/config/IrisConfigs.scala",
+      "repository": "chipyard",
+      "repository_commit": "b4542facf6cc9457f6e358e8f80a8b3a0ff5df19",
+      "sha256": "cdefa071cd16739ecd230ce3739958bcd98ee4450c592ef230fcf6e4e25d5934",
+      "source_state": "local-working-tree",
+      "snapshot": "evidence/iris-config.scala"
+    },
+    "firesim-target-config": {
+      "path": "generators/firechip/chip/src/main/scala/TargetConfigs.scala",
+      "repository": "chipyard",
+      "repository_commit": "b4542facf6cc9457f6e358e8f80a8b3a0ff5df19",
+      "sha256": "210fd83d187810a533b6f1c1c1855e01562c171b0be234b5a3a464b28451ae4d",
+      "source_state": "local-working-tree",
+      "snapshot": "evidence/firesim-target-config.scala"
+    },
+    "matrix-config-decode": {
+      "path": "generators/rocket-chip/src/main/scala/rocket/Matrix.scala",
+      "repository": "rocket-chip",
+      "repository_commit": "fc745a8c377fdbf1d278eea81da9ac47b4b5fbc0",
+      "sha256": "ae61b49059dfa45b0812d5ab684c07ad54eee4959f5cdd2752de8cc13a0538d7",
+      "source_state": "tracked-clean-repository-or-generated-artifact",
+      "snapshot": "evidence/matrix-config-decode.scala"
+    },
+    "saturn-decode": {
+      "path": "generators/saturn/src/main/scala/insns/Instructions.scala",
+      "repository": "saturn",
+      "repository_commit": "536774bd4c5e3bcd7813a4a0dc72fc87e5818532",
+      "sha256": "2507afac954314076c174350dee1c4058d7d67675e34f33db104f543f1bc166c",
+      "source_state": "local-working-tree",
+      "snapshot": "evidence/saturn-decode.scala"
+    },
+    "saturn-parameters": {
+      "path": "generators/saturn/src/main/scala/common/Parameters.scala",
+      "repository": "saturn",
+      "repository_commit": "536774bd4c5e3bcd7813a4a0dc72fc87e5818532",
+      "sha256": "1169c089a0fd29e1e5c4ebd83c43acc5775a704298dc764c05859162b918b332",
+      "source_state": "local-working-tree",
+      "snapshot": "evidence/saturn-parameters.scala"
+    },
+    "outer-product-unit": {
+      "path": "generators/saturn/src/main/scala/exu/OuterProductUnit.scala",
+      "repository": "saturn",
+      "repository_commit": "536774bd4c5e3bcd7813a4a0dc72fc87e5818532",
+      "sha256": "be2f6842fc72538ef7b458e22e0f3a3668a58ae3038d03a5deea47f629adf3ff",
+      "source_state": "local-working-tree",
+      "snapshot": "evidence/outer-product-unit.scala"
+    },
+    "outer-product-sequencer": {
+      "path": "generators/saturn/src/main/scala/backend/OuterProductSequencer.scala",
+      "repository": "saturn",
+      "repository_commit": "536774bd4c5e3bcd7813a4a0dc72fc87e5818532",
+      "sha256": "59dd5e0c462272ab0aca03516ab5516af62c1609029c0fdf8ebad8f04bff3580",
+      "source_state": "local-working-tree",
+      "snapshot": "evidence/outer-product-sequencer.scala"
+    },
+    "shuttle-parameters": {
+      "path": "generators/shuttle/src/main/scala/common/Parameters.scala",
+      "repository": "shuttle",
+      "repository_commit": "a536ed1df91a0f65770e36758291d02a8cb929c4",
+      "sha256": "b4c8d22cd832f1a046ad998f05ac4731b80124edb0ba2e3e541d4bb1853440f6",
+      "source_state": "tracked-clean-repository-or-generated-artifact",
+      "snapshot": "evidence/shuttle-parameters.scala"
+    },
+    "shuttle-config": {
+      "path": "generators/shuttle/src/main/scala/common/Configs.scala",
+      "repository": "shuttle",
+      "repository_commit": "a536ed1df91a0f65770e36758291d02a8cb929c4",
+      "sha256": "04d646dc789044b8b4402bc783f0cca61be7f39c7d89ea9dcdf279e25bc7e89e",
+      "source_state": "tracked-clean-repository-or-generated-artifact",
+      "snapshot": "evidence/shuttle-config.scala"
+    },
+    "boot-config": {
+      "path": "generators/chipyard/src/main/scala/config/fragments/PeripheralFragments.scala",
+      "repository": "chipyard",
+      "repository_commit": "b4542facf6cc9457f6e358e8f80a8b3a0ff5df19",
+      "sha256": "65f495f847c5ffd09ed96b25890643123556a6ff324c9ba7c7389744777be53d",
+      "source_state": "local-working-tree",
+      "snapshot": "evidence/boot-config.scala"
+    },
+    "boot-address-register": {
+      "path": "generators/testchipip/src/main/scala/boot/BootAddrReg.scala",
+      "repository": "testchipip",
+      "repository_commit": "86c9a824fd42b854526018f9111087b0f3d1d31c",
+      "sha256": "cb69e7997221ad6a9b6de097dfd8066f4d761d56f9a284be97b3766f22f4c9b9",
+      "source_state": "tracked-clean-repository-or-generated-artifact",
+      "snapshot": "evidence/boot-address-register.scala"
+    },
+    "boot-rom": {
+      "path": "generators/testchipip/bootrom/bootrom.S",
+      "repository": "testchipip",
+      "repository_commit": "86c9a824fd42b854526018f9111087b0f3d1d31c",
+      "sha256": "0741269bb151f738f141362d733c4687310a0f2f9a638d8aa9c537860bd3d923",
+      "source_state": "tracked-clean-repository-or-generated-artifact",
+      "snapshot": "evidence/boot-rom.S"
+    },
+    "boot-rom-disassembly": {
+      "path": "generators/testchipip/bootrom/bootrom.rv64.dump",
+      "repository": "testchipip",
+      "repository_commit": "86c9a824fd42b854526018f9111087b0f3d1d31c",
+      "sha256": "0d9ef874143f09deb33cd1af828c381663b0ef69c7a49aab3165ac63d5a705e8",
+      "source_state": "tracked-clean-repository-or-generated-artifact",
+      "snapshot": "evidence/boot-rom-disassembly.dump"
+    },
+    "memmap-permissions": {
+      "path": "generators/rocket-chip/src/main/scala/tilelink/Parameters.scala",
+      "repository": "rocket-chip",
+      "repository_commit": "fc745a8c377fdbf1d278eea81da9ac47b4b5fbc0",
+      "sha256": "7d9e843dbd267389824692ee6861c79ebe336aabb64312d7267673439b604702",
+      "source_state": "tracked-clean-repository-or-generated-artifact",
+      "snapshot": "evidence/memmap-permissions.scala"
+    },
+    "firesim-dts": {
+      "path": "sims/firesim-staging/generated-src/firechip.chip.FireSim.IrisFiresimNOCflushCombinedConfig/firechip.chip.FireSim.IrisFiresimNOCflushCombinedConfig.dts",
+      "repository": "chipyard",
+      "repository_commit": "b4542facf6cc9457f6e358e8f80a8b3a0ff5df19",
+      "sha256": "0549bada557ad461790fed8579599672f532f5652078efe82b753f774c97d093",
+      "source_state": "local-working-tree",
+      "snapshot": "evidence/firesim-dts.dts"
+    },
+    "firesim-memmap": {
+      "path": "sims/firesim-staging/generated-src/firechip.chip.FireSim.IrisFiresimNOCflushCombinedConfig/firechip.chip.FireSim.IrisFiresimNOCflushCombinedConfig.memmap.json",
+      "repository": "chipyard",
+      "repository_commit": "b4542facf6cc9457f6e358e8f80a8b3a0ff5df19",
+      "sha256": "1ac5e83588fc89417f42d1dbc8e6da605f283ff2fe5d52ed35843ba30359c0dd",
+      "source_state": "local-working-tree",
+      "snapshot": "evidence/firesim-memmap.json"
+    },
+    "firesim-l2": {
+      "path": "sims/firesim-staging/generated-src/firechip.chip.FireSim.IrisFiresimNOCflushCombinedConfig/firechip.chip.FireSim.IrisFiresimNOCflushCombinedConfig.l2.json",
+      "repository": "chipyard",
+      "repository_commit": "b4542facf6cc9457f6e358e8f80a8b3a0ff5df19",
+      "sha256": "b96975453b4f25d51305200d769accdb25690ee3cef288bd567fe9d38365d401",
+      "source_state": "local-working-tree",
+      "snapshot": "evidence/firesim-l2.json"
+    },
+    "firesim-clocks": {
+      "path": "sims/firesim-staging/generated-src/firechip.chip.FireSim.IrisFiresimNOCflushCombinedConfig/firechip.chip.FireSim.IrisFiresimNOCflushCombinedConfig.firesimRationalClockBridge.freq-summary",
+      "repository": "chipyard",
+      "repository_commit": "b4542facf6cc9457f6e358e8f80a8b3a0ff5df19",
+      "sha256": "5d8bc08966ae133f3720a73e267ce5b999161ef92c2e6c788dbfd7921e51f70c",
+      "source_state": "local-working-tree",
+      "snapshot": "evidence/firesim-clocks.freq-summary"
+    },
+    "firesim-fir": {
+      "path": "sims/firesim-staging/generated-src/firechip.chip.FireSim.IrisFiresimNOCflushCombinedConfig/firechip.chip.FireSim.IrisFiresimNOCflushCombinedConfig.fir",
+      "repository": "chipyard",
+      "repository_commit": "b4542facf6cc9457f6e358e8f80a8b3a0ff5df19",
+      "sha256": "c777b9c3189346bd2ecebdecaf5a368ee6ee9b70cf1eba568c9bf91ad0f47fef",
+      "artifact_build_revision": null,
+      "excerpt": "    connect bootROMResetVectorSourceNodeOut, UInt<17>(0h10000) @[generators/rocket-chip/src/main/scala/devices/tilelink/BootROM.scala 113:45]"
+    }
+  },
+  "hardware_manifest_sha256": "aa2feafcdedde5916155bbe3bbdd2cec8eb64f109eb555778ec670c52c96e064",
+  "hardware_source_association": "unverified: elaboration files are local evidence, not proven build inputs for deployed image",
+  "rtl_certified": false,
+  "timing_calibrated": false,
+  "datatype_limitations": [
+    "Hart2 has no VME/MX FP8/BF16 arithmetic",
+    "Scalar BF16 FCVT is not decoded on any hart",
+    "FP8 represents configured formats and operations; no blanket all-FP8 capability"
+  ],
+  "compiler_repositories": {
+    "merlin": {
+      "baseline": "d56133b168bbee3d73cb8b4304d3622d4191fc6a",
+      "url": "https://github.com/ucb-bar/merlin.git"
+    },
+    "iris-mlir": {
+      "baseline": "8447703ae5805271911e8ef232d8fd1aa7b6947d",
+      "url": "https://github.com/ucb-bar/iris-mlir.git"
+    },
+    "rvv-mlir": {
+      "commit": "a80eea3eb749e5fd4cb822779a08d0d8ca09e5d5",
+      "url": "https://github.com/ucb-bar/rvv-mlir.git"
+    },
+    "spike": {
+      "upstream_commit": "72958551566a30f19444bd7e354552824e4d0a98",
+      "actual_overlay_provenance": "selected simulator manifest; never inferred from a branch name"
+    }
+  }
+}

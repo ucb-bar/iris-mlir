@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
@@ -276,6 +277,13 @@ def device_simulator(
     must not substitute another simulator, which would trap on the unit's words or decode them as
     something else. ``isa_extensions`` are spelled with this configuration's derived tile edge.
     """
+    # An explicit Iris descriptor owns the heterogeneous machine and modeled
+    # clocks. A refused descriptor must never fall back to generic Zvt Spike.
+    if "MERLIN_IRIS_MODEL_MANIFEST" in os.environ:
+        from ..simulator import device_simulator as frozen_simulator
+
+        return frozen_simulator(unit=unit, config=config)
+
     from merlin.common import provenance as PROV
 
     contract = load_contract(unit, path=contract_path)

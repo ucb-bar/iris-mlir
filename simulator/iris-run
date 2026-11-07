@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+"""Run the frozen Iris release selected by --model-root or IRIS_MODEL_ROOT."""
+
+import argparse
+import importlib.util
+import json
+import os
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def adapter():
+    spec = importlib.util.spec_from_file_location(
+        "iris_release_adapter", ROOT / "src/iris/simulator.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def main():
+    parser = argparse.ArgumentParser(__doc__)
+    parser.add_argument("--model-root", type=Path, default=os.environ.get("IRIS_MODEL_ROOT"),
+                        help="External verified iris-model workspace (required)")
+    commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("check", help="Verify both complete frozen profile closures")
+    for name in ("compute", "zephyr", "profile"):
+        child = commands.add_parser(name)
+        child.add_argument("elf", type=Path)
+        child.add_argument("--output", type=Path, required=True)
+        child.add_argument("--timeout", type=float, default=600)
+        child.add_argument("--seed", type=int, default=0)
+        if name == "profile":
+            child.add_argument("--region-map", type=Path)
+            child.add_argument("--region-format", choices=("none", "iris-json", "merlin-kernel-v1"),
+                               default="iris-json")
+    args = parser.parse_args()
+    if args.model_root is None:
+        parser.error("Select --model-root /path/to/iris-model or set IRIS_MODEL_ROOT")
+    model_root = args.model_root.resolve()
+    api = adapter()
+    try:
+        release = api.load(api.RELEASE)
+        runner = model_root / "iris-run"
+        if api.sha(runner) != release["runner_sha256"]:
+            raise ValueError("Frozen external entrypoint changed")
+        names = ("source_compute", "source_os") if args.command == "check" else (
+            "source_os" if args.command == "zephyr" else "source_compute",)
+        results = {}
+        for name in names:
+            manifest = model_root / release["profiles"][name]["manifest"]
+            verified = api.verified_model(manifest)
+            provider_root = Path(api.load(manifest)["model_provider"]).resolve().parents[1]
+            if provider_root != model_root:
+                raise ValueError("Selected model root differs from the bound provider workspace")
+            results[name] = {key: verified[key] for key in
+                ("available", "native_binary_sha256", "matrix_hart_ids",
+                 "accuracy_2percent_certified", "hart2_timing_accuracy_certified")}
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        parser.exit(1, "iris-run: " + str(error) + "\n")
+    if args.command == "check":
+        print(json.dumps(results, indent=2))
+        return 0
+    argv = [sys.executable, str(runner), args.command, str(args.elf.resolve()),
+            "--output", str(args.output.resolve()), "--timeout", str(args.timeout),
+            "--seed", str(args.seed)]
+    if args.command == "profile":
+        argv.extend(("--region-format", args.region_format))
+        if args.region_map is not None:
+            argv.extend(("--region-map", str(args.region_map.resolve())))
+    # The unchanged external runner archives IRIS_* environment entries in its
+    # receipt. Bind this integration without modifying any frozen release file.
+    os.environ["IRIS_MLIR_ADAPTER_SHA256"] = api.sha(ROOT / "src/iris/simulator.py")
+    os.environ["IRIS_MLIR_RELEASE_SHA256"] = api.sha(api.RELEASE)
+    os.environ["IRIS_MLIR_LAUNCHER_SHA256"] = api.sha(__file__)
+    os.execv(sys.executable, argv)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

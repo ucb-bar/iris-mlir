@@ -4,6 +4,12 @@ Merlin support for **Iris** (chipyard `iris-cy`, `IrisConfig`). This repository 
 [`rvv-mlir`](https://github.com/ucb-bar/rvv-mlir). It inherits all of RVV and adds Iris's configuration,
 its boards, and its **VME/Xsfmm matrix unit**.
 
+The [Iris development simulator](simulator/README.md) adds explicit frozen
+three-hart Spike profiles for baremetal compute, Zephyr, and JSON/Perfetto
+profiling. Start with `IRIS_MODEL_ROOT=/path/to/iris-model ./simulator/iris-run check`.
+Its source handoff, calibration fixtures and measured accuracy limits are in
+`simulator/`; the full ±2% timing target remains unmet.
+
 ```
 rvv-mlir   (RVV codegen, feature and policy passes, schedules, contract)
  ├── kodiak-mlir   (+ BME OPU, + Kodiak boards)

@@ -1,0 +1,68 @@
+{
+  "schema": "iris.development_simulator_validation_summary.v1",
+  "evidence": {
+    "isolated_compute": {
+      "external_path": "build/rvv-compute-heldout2-C12-source-VADD-root-validation-v1/report.json",
+      "sha256": "bd7c177fdb0eb235f5e86e713a4b401c86c65bc29f54da24557bb546ffc51c88"
+    },
+    "zephyr_timing": {
+      "external_path": "build/zephyr-hart2-pow2-35a-OS-root-validation-v2/report.json",
+      "sha256": "da6e43471b2f67cea0eb617c38859d5111441aedf98c3fa42bb026a35ef8bfeb"
+    },
+    "zephyr_FPGA_functional": {
+      "external_path": "build/zephyr-hart2-pow2-FPGA-sealed-analysis-v1/report.json",
+      "sha256": "35d713fbc927c8dda0a05e94fe4c3528efafede40f27884f409fdb2849a9f407"
+    },
+    "zephyr_example_parity": {
+      "external_path": "build/zephyr-firstuse-f5d-model-FPGA-functional-parity-v1/report.json",
+      "sha256": "493725e7398cd20f468cd1d334337b593e7d063c3fffcf45486911a410518521"
+    },
+    "wrapup": {
+      "external_path": "build/iris-wrapup-20261107-v1/manifest.json",
+      "sha256": "544dc94f76b9a09805ef701c83754b27a5537e3d0d88b843a254fc471c590147"
+    }
+  },
+  "isolated_compute": {
+    "count": 1320,
+    "median_absolute_percent": 0.15479876160990713,
+    "p90_absolute_percent": 6.522420821574161,
+    "within2": 1110,
+    "end_to_end_normal_exit_qualified": false,
+    "median_signed_percent": 0.06476683937823834,
+    "maximum_absolute_percent": 150.58674278464954,
+    "quantile": "nearest-rank-ceil"
+  },
+  "zephyr": {
+    "count": 648,
+    "independent_active_values": 181440,
+    "FPGA_numerical_pass": true,
+    "median_absolute_percent": 4.705882352941177,
+    "p90_absolute_percent": 27.751196172248804,
+    "within2": 159,
+    "reserved": {
+      "count": 192,
+      "median_absolute_percent": 24.615384615384617,
+      "within2": 32,
+      "defined_relative_errors": 192,
+      "zero_reference_count": 0,
+      "median_signed_percent": -24.615384615384617,
+      "p90_absolute_percent": 28.94736842105263,
+      "maximum_absolute_percent": 90.48903272204242,
+      "quantile": "nearest-rank-ceil"
+    },
+    "comparison_model_end_to_end_normal_exit_qualified": false,
+    "defined_relative_errors": 648,
+    "zero_reference_count": 0,
+    "median_signed_percent": -3.5714285714285716,
+    "maximum_absolute_percent": 96.763883339992,
+    "quantile": "nearest-rank-ceil"
+  },
+  "qualification": {
+    "full_model_certified": false,
+    "accuracy_2percent_certified": false,
+    "source_image_association_verified": false,
+    "hart2_timing_accuracy_certified": false,
+    "portable_clean_build_verified": false
+  },
+  "note": "Derived summary of archived reports; raw per-region signed rows, freeze receipts and archives remain external and are referenced by their original evidence. No refit performed during publication."
+}

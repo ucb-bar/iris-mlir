@@ -37,8 +37,8 @@
     {
       "path": "src/iris/lower/vme_shim.py",
       "source": "this package",
-      "change": "VME contract, encoding, and object builder extracted from Merlin into this package; shared descriptor ABI remains in Merlin",
-      "sha256": "b0f0a6575616b7882b0c77cc97b385c2179e956f6b931427fd56502567a2716e"
+      "change": "VME contract, encoding, and object builder extracted from Merlin into this package; shared descriptor ABI remains in Merlin; explicit frozen Iris descriptor dispatch before the legacy Zvt route",
+      "sha256": "75ae6b201b1f89ad0ac8fe8f9f4f6bf56aabae4a6924d7c40e99b8a3c04805a7"
     },
     {
       "path": "src/iris/backend.py",

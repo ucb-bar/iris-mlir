@@ -1,0 +1,103 @@
+purpose uncalibrated-integration-fixture
+source actual-priority-v2-training-positive-effective-services-not-full-certificate
+base_hz 500000000
+rtc_divider 1000
+max_cycles 100000000000
+trap_cycles 4
+hart 0 1 source
+hart 1 1 source
+hart 2 1 source
+resource scalar0 1
+resource scalar1 1
+resource scalar2 1
+rule 0 0 0 scalar0 3 1 uncalibrated-conservative-boundary base_cycles
+rule 1 0 0 scalar1 3 1 uncalibrated-conservative-boundary base_cycles
+rule 2 0 0 scalar2 3 1 uncalibrated-conservative-boundary base_cycles
+shuttle_pipeline pure-integer-rvc-counter-sequential-frontend
+rocket_pipeline pure-integer-rvc-counter-sequential-frontend
+pipeline_values private-pure-integer
+
+empirical_profile experimental-effective-services iris-C12-source-composite-fixed-costs-OPU-OFF-v1 bounded
+
+empirical_async integer-vme-fadd-nonmemory-v3
+
+counter_policy source-ungated-stall
+
+empirical_icache address-tags-refill-proxy-v1
+empirical_load_front dram-L1-hit-Shuttle-COM-forward-v2
+
+resource fit.scratchpad 1
+resource fit.sharedFPU2 1
+resource fit.tcm.target0 1
+resource fit.vector-memory0 1
+resource fit.vector-memory1 1
+resource fit.vector-memory2 1
+resource fit.vector0 1
+resource fit.vector1 1
+resource fit.vectorFP0 1
+resource fit.vectorFP1 1
+resource fit.vme0 1
+resource fit.vme1 1
+empirical_cache_service 0 0 0 0 545.732041126 461 0 EFFECTIVE_PRIORITY_TRAIN_FIT 8f0add76ad2be372c2602ef0f3947614f3b26e92e9f9a0619b13786d183a3258 core_cycles
+empirical_cache_service 1 0 0 0 545.732041126 461 0 EFFECTIVE_PRIORITY_TRAIN_FIT 8f0add76ad2be372c2602ef0f3947614f3b26e92e9f9a0619b13786d183a3258 core_cycles
+empirical_cache_service 2 0 0 0 545.732041126 461 0 EFFECTIVE_PRIORITY_TRAIN_FIT 8f0add76ad2be372c2602ef0f3947614f3b26e92e9f9a0619b13786d183a3258 core_cycles
+empirical_family 0 memory.LOCAL_TCM.load fit.tcm.target0 2.82381997945 0 1 EFFECTIVE_PRIORITY_TRAIN_FIT 8f0add76ad2be372c2602ef0f3947614f3b26e92e9f9a0619b13786d183a3258 core_cycles
+empirical_family 0 memory.LOCAL_TCM.store fit.tcm.target0 0.874004811306 0 1 EFFECTIVE_PRIORITY_TRAIN_FIT 8f0add76ad2be372c2602ef0f3947614f3b26e92e9f9a0619b13786d183a3258 core_cycles
+empirical_family 0 memory.REMOTE_TCM.load fit.tcm.target0 25.9971767292 0 1 EFFECTIVE_PRIORITY_TRAIN_FIT 8f0add76ad2be372c2602ef0f3947614f3b26e92e9f9a0619b13786d183a3258 core_cycles
+empirical_family 0 memory.REMOTE_TCM.store fit.tcm.target0 24.9011827571 0 1 EFFECTIVE_PRIORITY_TRAIN_FIT 8f0add76ad2be372c2602ef0f3947614f3b26e92e9f9a0619b13786d183a3258 core_cycles
+empirical_family 0 memory.SCRATCHPAD.load fit.scratchpad 19.6722366578 0 1 EFFECTIVE_PRIORITY_TRAIN_FIT 8f0add76ad2be372c2602ef0f3947614f3b26e92e9f9a0619b13786d183a3258 core_cycles
+empirical_family 0 memory.SCRATCHPAD.store fit.scratchpad 16.7280607069 0 1 EFFECTIVE_PRIORITY_TRAIN_FIT 8f0add76ad2be372c2602ef0f3947614f3b26e92e9f9a0619b13786d183a3258 core_cycles
+empirical_family 1 memory.LOCAL_TCM.load fit.tcm.target0 2.82381997945 0 1 EFFECTIVE_PRIORITY_TRAIN_FIT 8f0add76ad2be372c2602ef0f3947614f3b26e92e9f9a0619b13786d183a3258 core_cycles
+empirical_family 1 memory.LOCAL_TCM.store fit.tcm.target0 0.874004811306 0 1 EFFECTIVE_PRIORITY_TRAIN_FIT 8f0add76ad2be372c2602ef0f3947614f3b26e92e9f9a0619b13786d183a3258 core_cycles
+empirical_family 1 memory.REMOTE_TCM.load fit.tcm.target0 25.9971767292 0 1 EFFECTIVE_PRIORITY_TRAIN_FIT 8f0add76ad2be372c2602ef0f3947614f3b26e92e9f9a0619b13786d183a3258 core_cycles
+empirical_family 1 memory.REMOTE_TCM.store fit.tcm.target0 24.9011827571 0 1 EFFECTIVE_PRIORITY_TRAIN_FIT 8f0add76ad2be372c2602ef0f3947614f3b26e92e9f9a0619b13786d183a3258 core_cycles
+empirical_family 1 memory.SCRATCHPAD.load fit.scratchpad 19.6722366578 0 1 EFFECTIVE_PRIORITY_TRAIN_FIT 8f0add76ad2be372c2602ef0f3947614f3b26e92e9f9a0619b13786d183a3258 core_cycles
+empirical_family 1 memory.SCRATCHPAD.store fit.scratchpad 16.7280607069 0 1 EFFECTIVE_PRIORITY_TRAIN_FIT 8f0add76ad2be372c2602ef0f3947614f3b26e92e9f9a0619b13786d183a3258 core_cycles
+empirical_family 2 memory.REMOTE_TCM.load fit.tcm.target0 24.8732838867 0 1 EFFECTIVE_PRIORITY_TRAIN_FIT 8f0add76ad2be372c2602ef0f3947614f3b26e92e9f9a0619b13786d183a3258 core_cycles
+empirical_family 2 memory.REMOTE_TCM.store fit.tcm.target0 20.7416664692 0 1 EFFECTIVE_PRIORITY_TRAIN_FIT 8f0add76ad2be372c2602ef0f3947614f3b26e92e9f9a0619b13786d183a3258 core_cycles
+empirical_family 2 memory.SCRATCHPAD.load fit.scratchpad 28.4389526314 0 1 EFFECTIVE_PRIORITY_TRAIN_FIT 8f0add76ad2be372c2602ef0f3947614f3b26e92e9f9a0619b13786d183a3258 core_cycles
+empirical_family 2 memory.SCRATCHPAD.store fit.scratchpad 25.6839264739 0 1 EFFECTIVE_PRIORITY_TRAIN_FIT 8f0add76ad2be372c2602ef0f3947614f3b26e92e9f9a0619b13786d183a3258 core_cycles
+empirical_read_overlap response-ready-L1-read-only-v2
+resource fit.hybrid.memory0 1
+resource fit.hybrid.memory1 1
+resource fit.hybrid.memory2 1
+resource fit.hybrid.vector0 1
+resource fit.hybrid.vector1 1
+resource fit.hybrid.vectorFP0 1
+resource fit.hybrid.vectorFP1 1
+resource fit.hybrid.vectorFP2 1
+resource fit.hybrid.vme0 1
+resource fit.hybrid.vme1 1
+empirical_instruction_service 0 30 545.732041126 461 OWN_HYBRID_TRAIN c8b51afb66c6661cdc3d62b3d82a36260ccd65d4f3bb2d2107b4694700d27190 core_cycles
+empirical_branch_service 0 5 OWN_HYBRID_TRAIN c8b51afb66c6661cdc3d62b3d82a36260ccd65d4f3bb2d2107b4694700d27190 core_cycles
+empirical_instruction_service 1 30 545.732041126 461 OWN_HYBRID_TRAIN c8b51afb66c6661cdc3d62b3d82a36260ccd65d4f3bb2d2107b4694700d27190 core_cycles
+empirical_branch_service 1 5 OWN_HYBRID_TRAIN c8b51afb66c6661cdc3d62b3d82a36260ccd65d4f3bb2d2107b4694700d27190 core_cycles
+empirical_instruction_service 2 49 545.732041126 461 OWN_HYBRID_TRAIN c8b51afb66c6661cdc3d62b3d82a36260ccd65d4f3bb2d2107b4694700d27190 core_cycles
+empirical_branch_service 2 2 OWN_HYBRID_TRAIN c8b51afb66c6661cdc3d62b3d82a36260ccd65d4f3bb2d2107b4694700d27190 core_cycles
+empirical_family 0 memory.vector.load fit.hybrid.memory0 0 2.7300715209412401 1 OWN_ASM_C12_TRAIN_LINEAR_PROPOSAL 459e32808d58e75afbaef6db4b3946f343f61346f03d368b35eb881adbc96017 core_cycles
+empirical_family 0 memory.vector.store fit.hybrid.memory0 0 4.6232512103417962 1 OWN_ASM_C12_TRAIN_LINEAR_PROPOSAL 459e32808d58e75afbaef6db4b3946f343f61346f03d368b35eb881adbc96017 core_cycles
+empirical_family 0 rvv.fadd.fp16 fit.hybrid.vectorFP0 0.74490353955298305 0 1 OWN_ASM_C12_TRAIN_LINEAR_PROPOSAL 459e32808d58e75afbaef6db4b3946f343f61346f03d368b35eb881adbc96017 core_cycles
+empirical_family 0 rvv.fadd.fp32 fit.hybrid.vectorFP0 0.73685234348846862 0 1 OWN_ASM_C12_TRAIN_LINEAR_PROPOSAL 459e32808d58e75afbaef6db4b3946f343f61346f03d368b35eb881adbc96017 core_cycles
+empirical_family 0 rvv.fadd.fp64 fit.hybrid.vectorFP0 0.74740627576858965 0 1 OWN_ASM_C12_TRAIN_LINEAR_PROPOSAL 459e32808d58e75afbaef6db4b3946f343f61346f03d368b35eb881adbc96017 core_cycles
+empirical_family 0 rvv.integer fit.hybrid.vector0 0 0 1 OWN_ASM_C12_TRAIN_LINEAR_PROPOSAL 459e32808d58e75afbaef6db4b3946f343f61346f03d368b35eb881adbc96017 core_cycles
+empirical_family 0 vme.row_move fit.hybrid.vme0 0.22968180802874769 0 1 OWN_ASM_C12_TRAIN_LINEAR_PROPOSAL 459e32808d58e75afbaef6db4b3946f343f61346f03d368b35eb881adbc96017 core_cycles
+empirical_family 0 vme.zero fit.hybrid.vme0 2 0 1 OWN_HYBRID_TRAIN c8b51afb66c6661cdc3d62b3d82a36260ccd65d4f3bb2d2107b4694700d27190 core_cycles
+empirical_family 1 memory.vector.load fit.hybrid.memory1 0 2.7300715209412401 1 OWN_ASM_C12_TRAIN_LINEAR_PROPOSAL 459e32808d58e75afbaef6db4b3946f343f61346f03d368b35eb881adbc96017 core_cycles
+empirical_family 1 memory.vector.store fit.hybrid.memory1 0 4.6232512103417962 1 OWN_ASM_C12_TRAIN_LINEAR_PROPOSAL 459e32808d58e75afbaef6db4b3946f343f61346f03d368b35eb881adbc96017 core_cycles
+empirical_family 1 rvv.fadd.fp16 fit.hybrid.vectorFP1 0.74490353955298305 0 1 OWN_ASM_C12_TRAIN_LINEAR_PROPOSAL 459e32808d58e75afbaef6db4b3946f343f61346f03d368b35eb881adbc96017 core_cycles
+empirical_family 1 rvv.fadd.fp32 fit.hybrid.vectorFP1 0.73685234348846862 0 1 OWN_ASM_C12_TRAIN_LINEAR_PROPOSAL 459e32808d58e75afbaef6db4b3946f343f61346f03d368b35eb881adbc96017 core_cycles
+empirical_family 1 rvv.fadd.fp64 fit.hybrid.vectorFP1 0.74740627576858965 0 1 OWN_ASM_C12_TRAIN_LINEAR_PROPOSAL 459e32808d58e75afbaef6db4b3946f343f61346f03d368b35eb881adbc96017 core_cycles
+empirical_family 1 rvv.integer fit.hybrid.vector1 0 0 1 OWN_ASM_C12_TRAIN_LINEAR_PROPOSAL 459e32808d58e75afbaef6db4b3946f343f61346f03d368b35eb881adbc96017 core_cycles
+empirical_family 1 vme.row_move fit.hybrid.vme1 0.22968180802874769 0 1 OWN_ASM_C12_TRAIN_LINEAR_PROPOSAL 459e32808d58e75afbaef6db4b3946f343f61346f03d368b35eb881adbc96017 core_cycles
+empirical_family 1 vme.zero fit.hybrid.vme1 2 0 1 OWN_HYBRID_TRAIN c8b51afb66c6661cdc3d62b3d82a36260ccd65d4f3bb2d2107b4694700d27190 core_cycles
+empirical_family 2 memory.vector.load fit.hybrid.memory2 807.356467253 0 1 OWN_HYBRID_TRAIN c8b51afb66c6661cdc3d62b3d82a36260ccd65d4f3bb2d2107b4694700d27190 core_cycles
+empirical_family 2 memory.vector.store fit.hybrid.memory2 95.0650808227 0 1 OWN_HYBRID_TRAIN c8b51afb66c6661cdc3d62b3d82a36260ccd65d4f3bb2d2107b4694700d27190 core_cycles
+empirical_family 2 rvv.fadd.fp16 fit.hybrid.sharedFPU2 3 0 1 OWN_HYBRID_TRAIN c8b51afb66c6661cdc3d62b3d82a36260ccd65d4f3bb2d2107b4694700d27190 core_cycles
+empirical_family 2 rvv.fadd.fp32 fit.hybrid.sharedFPU2 3 0 1 OWN_HYBRID_TRAIN c8b51afb66c6661cdc3d62b3d82a36260ccd65d4f3bb2d2107b4694700d27190 core_cycles
+empirical_family 2 rvv.fadd.fp64 fit.hybrid.sharedFPU2 1 0 1 OWN_HYBRID_TRAIN c8b51afb66c6661cdc3d62b3d82a36260ccd65d4f3bb2d2107b4694700d27190 core_cycles
+resource fit.hybrid.sharedFPU2 1
+
+empirical_scalar_fadd source-HSD-pipeline-v1
+empirical_pending_base_retry h0h1-live-XPR-base-RRD-retry-v1
+empirical_async_rrd_wake h0h1-existing-live-head-eligibility-v1
+empirical_fadd_eg compute-HSD-fullVL-flags0-counterCSR-COMplus1-v2

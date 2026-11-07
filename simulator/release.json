@@ -1,0 +1,95 @@
+{
+  "schema": "iris.development_simulator_release.v1",
+  "release": "frozen-35a",
+  "upstream_spike_url": "https://github.com/riscv-software-src/riscv-isa-sim.git",
+  "source_pins": {
+    "chipyard": "b4542facf6cc9457f6e358e8f80a8b3a0ff5df19",
+    "saturn": "536774bd4c5e3bcd7813a4a0dc72fc87e5818532",
+    "rocket-chip": "fc745a8c377fdbf1d278eea81da9ac47b4b5fbc0",
+    "shuttle": "a536ed1df91a0f65770e36758291d02a8cb929c4",
+    "hardfloat": "0ecaef097ce2accbd16a61613699450ed5533f29",
+    "spike": "72958551566a30f19444bd7e354552824e4d0a98"
+  },
+  "companion_merlin_baseline": "d56133b168bbee3d73cb8b4304d3622d4191fc6a",
+  "companion_merlin_local_patch_required": true,
+  "native_binary_sha256": "35a804964d7882f36a8892d7672dcfbbc7becc89c87e2d830c149820c1291388",
+  "uart_library_sha256": "1723a1679f429b57d6a1aacf4a5f33e1f12c5cb35ccb8c4730975302ed60c6c0",
+  "provider_sha256": "f8efc314b22dd3b00fb04d72bb8001f6c724f5ff357d75c3b3a42708d24f8e78",
+  "runner_sha256": "9c991d44de781427bf22d273dbefd927843c433cb51be5f56cfb214708c01c5a",
+  "profiles": {
+    "source_compute": {
+      "manifest": "build/C12-source-VADD35a-optional-package-v1/source_compute/manifest.json",
+      "manifest_sha256": "5b5ae9e132994fb349f8bb16e82e39e18087369834bbd3f28e3a4cfca28ed0e1",
+      "calibration_identity": "iris-C12-source-VADD-fixed-costs-v1",
+      "fixture_sha256": "b1c752150d7c6b2427772076bf20e852a7d2142fdcc8b74c4dd380bf369eb328",
+      "profile_scope": {
+        "source_VADD": true,
+        "source_FADD": true,
+        "source_OPU": true,
+        "specialized_OPU_FENCE": true,
+        "normal_Zephyr_qualification_claimed": false,
+        "compute_timing_qualification_transferred": false
+      },
+      "per_hart_isa": {
+        "0": "rv64gcv_zfh_zvfh_zba_zbb_zbs_zvbb_zvl256b_zvfofp8min_zvfbfmin_zvfbfa_zvt32t_zvti8i32mm_zvtofp8fmm",
+        "1": "rv64gcv_zfh_zvfh_zba_zbb_zbs_zvbb_zvl256b_zvfofp8min_zvfbfmin_zvfbfa_zvt32t_zvti8i32mm_zvtofp8fmm",
+        "2": "rv64gcv_zfh_zvfh_zvl256b_zvbb"
+      }
+    },
+    "source_os": {
+      "manifest": "build/C12-source-VADD35a-optional-package-v1/source_os/manifest.json",
+      "manifest_sha256": "4b003a7885ceaf719c183f315c7857360ed883d6c98b9ced4664c102af6fe756",
+      "calibration_identity": "iris-C12-source-composite-fixed-costs-OPU-OFF-v1",
+      "fixture_sha256": "97ef45bb2cfb7144a1798e594df8065a55989980c8b406d0fe1e221597ef1bcb",
+      "profile_scope": {
+        "source_VADD": false,
+        "source_FADD": true,
+        "source_OPU": false,
+        "specialized_OPU_FENCE": false,
+        "normal_Zephyr_qualification_claimed": true,
+        "compute_timing_qualification_transferred": false
+      },
+      "per_hart_isa": {
+        "0": "rv64gcv_zfh_zvfh_zba_zbb_zbs_zvbb_zvl256b_zvfofp8min_zvfbfmin_zvfbfa_zvt32t_zvti8i32mm_zvtofp8fmm",
+        "1": "rv64gcv_zfh_zvfh_zba_zbb_zbs_zvbb_zvl256b_zvfofp8min_zvfbfmin_zvfbfa_zvt32t_zvti8i32mm_zvtofp8fmm",
+        "2": "rv64gcv_zfh_zvfh_zvl256b_zvbb"
+      }
+    }
+  },
+  "qualification": {
+    "full_model_certified": false,
+    "accuracy_2percent_certified": false,
+    "source_image_association_verified": false,
+    "hart2_timing_accuracy_certified": false,
+    "portable_clean_build_verified": false
+  },
+  "source_snapshot": "snapshot.json",
+  "external_artifacts": {
+    "capsule_manifest": {
+      "path": "build/C12-VADD-EG-frozen-35a80496-v2/manifest.json",
+      "sha256": "11bb432849e733743ee9fb271110c303264710771ff59913cb0d3a4a6ed354df"
+    },
+    "wrapup_manifest": {
+      "path": "build/iris-wrapup-20261107-v1/manifest.json",
+      "sha256": "544dc94f76b9a09805ef701c83754b27a5537e3d0d88b843a254fc471c590147"
+    }
+  },
+  "supported_current_workspace": "The release descriptors bind original absolute paths and interpreter identity; IRIS_MODEL_ROOT selects that verified workspace, not automatic relocation.",
+  "source_identity": {
+    "path": "source-identity.json",
+    "sha256": "d3f61edea2833cf7d95e7dfe9dada04a12ba4f32f76830bc232ea8adff1cba8f"
+  },
+  "companion_merlin_runtime_files": {
+    "integration/merlin/src/merlin/runtime/backends/device_simulator.py": {
+      "sha256": "118577d4808a66c30b90880d963ebec89f09b986f2bb4691558999ff917e07c1"
+    },
+    "integration/merlin/src/merlin/runtime/backends/zephyr_model.py": {
+      "sha256": "a6b89add9f9d95046b3180be09d983fe74ebf0d5a97aad2836b36d3c9552610b"
+    }
+  },
+  "companion_merlin_runtime_patch": {
+    "path": "merlin/heterogeneous-runner.patch",
+    "sha256": "a120ddc8e7c796465a8c3ae32feed22a5fecc3ffc1bae1900799fe4c1b366875",
+    "scope": "Historical generic backend delta against the companion baseline; not applied by this integration."
+  }
+}

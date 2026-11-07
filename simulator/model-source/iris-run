@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+"""Local Iris developer entry point for the frozen, tested 35a profiles."""
+import argparse
+import json
+import os
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parent
+PACKAGE = ROOT / 'build/C12-source-VADD35a-optional-package-v1'
+
+
+def main():
+    parser = argparse.ArgumentParser(__doc__)
+    commands = parser.add_subparsers(dest='command', required=True)
+    commands.add_parser('check', help='Verify both frozen profile descriptors and all bound inputs')
+    for name, description in (
+        ('compute', 'Finite baremetal RVV/VME timing; unsupported contexts refuse'),
+        ('zephyr', 'Separately tested three-hart OS/control profile; approximate timing'),
+        ('profile', 'Compute profile plus guarded source JSON/Perfetto accounting')):
+        child = commands.add_parser(name, help=description)
+        child.add_argument('elf', type=Path, help='Unstripped RV64 ELF')
+        child.add_argument('--output', type=Path, required=True, help='Fresh output directory')
+        child.add_argument('--timeout', type=float, default=600)
+        child.add_argument('--seed', type=int, default=0)
+        if name == 'profile':
+            child.add_argument('--region-map', type=Path)
+            child.add_argument('--region-format', choices=('none', 'iris-json', 'merlin-kernel-v1'),
+                               default='iris-json')
+    args = parser.parse_args()
+    if args.command == 'check':
+        sys.path.insert(0, str(ROOT))
+        from spike.empirical_provider_source_VADD35a_v1 import verify
+        try:
+            result = {}
+            for profile in ('source_compute', 'source_os'):
+                checked = verify(PACKAGE / profile / 'manifest.json')
+                if checked['available'] is not True:
+                    raise ValueError('Profile unavailable: ' + profile)
+                result[profile] = {key: checked[key] for key in
+                    ('available', 'native_binary_sha256', 'matrix_hart_ids',
+                     'accuracy_2percent_certified', 'hart2_timing_accuracy_certified')}
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            parser.exit(1, 'iris-run: ' + str(error) + '\n')
+        print(json.dumps(result, indent=2))
+        return 0
+    elf, output = args.elf.resolve(), args.output.resolve()
+    if args.command == 'profile':
+        argv = [sys.executable, '-m', 'iris_model.source_profile_run_v3',
+                '--model', str(PACKAGE / 'source_compute/manifest.json'),
+                '--elf', str(elf), '--output', str(output), '--timeout', str(args.timeout),
+                '--seed', str(args.seed), '--region-format', args.region_format]
+        if args.region_map is not None:
+            argv += ['--region-map', str(args.region_map.resolve())]
+    else:
+        profile = 'source_compute' if args.command == 'compute' else 'source_os'
+        argv = [sys.executable, str(ROOT / 'spike/run_source_VADD35a_v1.py'),
+                '--package', str(PACKAGE), '--profile', profile,
+                '--elf', str(elf), '--output', str(output), '--timeout', str(args.timeout),
+                '--seed', str(args.seed)]
+    os.chdir(ROOT)
+    os.execv(sys.executable, argv)
+
+
+if __name__ == '__main__':
+    sys.exit(main())

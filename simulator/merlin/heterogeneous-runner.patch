@@ -1,0 +1,110 @@
+diff --git a/src/merlin/runtime/backends/device_simulator.py b/src/merlin/runtime/backends/device_simulator.py
+new file mode 100644
+index 000000000..4757e13fd
+--- /dev/null
++++ b/src/merlin/runtime/backends/device_simulator.py
+@@ -0,0 +1,104 @@
++"""Explicit matrix-provider simulator selection and byte-bound execution.
++
++This module does not select a device, infer a cycle model, or grant certification.
++The target provider owns the launch arguments and support policy.
++"""
++from __future__ import annotations
++
++import hashlib
++import subprocess
++from pathlib import Path
++from typing import Any
++
++
++class DeviceSimulatorError(RuntimeError):
++    pass
++
++
++def sha256(path: str | Path) -> str:
++    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
++
++
++
++def execution_inputs(descriptor: dict[str, Any]) -> dict[str, str]:
++    """Validate launcher/native/support bytes without inferring certification."""
++    expected = descriptor.get("execution_input_sha256", {})
++    if not isinstance(expected, dict):
++        raise DeviceSimulatorError("execution_input_sha256 must be a mapping")
++    expected = dict(expected)
++    for name, value in [(descriptor.get("binary"), descriptor.get("binary_sha256")),
++                        (descriptor.get("native_binary"), descriptor.get("native_binary_sha256"))]:
++        if name is None and value is None:
++            continue
++        if not isinstance(name, str) or not isinstance(value, str) or len(value) != 64:
++            raise DeviceSimulatorError("invalid launcher/native input identity")
++        if name in expected and expected[name] != value:
++            raise DeviceSimulatorError("conflicting simulator input identity")
++        expected[name] = value
++    for name, value in expected.items():
++        if not isinstance(name, str) or not isinstance(value, str) or not Path(name).is_file() or sha256(name) != value:
++            raise DeviceSimulatorError("simulator execution input missing or changed: " + str(name))
++    return expected
++
++
++def resolve(matrix) -> dict[str, Any]:
++    """Ask the selected provider; never fall back after a refusal."""
++    callback = getattr(matrix.provider(), "device_simulator", None)
++    if not callable(callback):
++        raise DeviceSimulatorError("selected matrix provider declares no device_simulator")
++    descriptor = callback(unit=matrix.unit, config=matrix.config)
++    if not isinstance(descriptor, dict) or descriptor.get("available") is not True:
++        reason = descriptor.get("reason", "unavailable") if isinstance(descriptor, dict) else "invalid descriptor"
++        raise DeviceSimulatorError(str(reason))
++    binary = Path(descriptor.get("binary", ""))
++    if not binary.is_file() or sha256(binary) != descriptor.get("binary_sha256"):
++        raise DeviceSimulatorError("simulator binary missing or changed after provider verification")
++    if not isinstance(descriptor.get("isa_extensions"), list) or not descriptor.get("provenance"):
++        raise DeviceSimulatorError("simulator descriptor lacks ISA/provenance")
++    execution_inputs(descriptor)
++    return descriptor
++
++
++def run(matrix, elf: str | Path, *, harts: int, isa: str, memory: tuple[int, int],
++        active_hart_ids: tuple[int, ...] | None = None, timeout: float = 300):
++    """Run an exact ELF and return captured bytes plus immutable identities.
++
++    Provider launch_args are an argv list. No shell expansion is performed.
++    Timing/certification status is propagated, never inferred from exit status.
++    """
++    descriptor = resolve(matrix)
++    if type(harts) is not int or harts < 1:
++        raise DeviceSimulatorError("harts must be a positive integer")
++    allowed = descriptor.get("matrix_hart_ids")
++    active = tuple(range(harts)) if active_hart_ids is None else tuple(active_hart_ids)
++    if not active or len(set(active)) != len(active) or any(type(h) is not int or h < 0 or h >= harts for h in active):
++        raise DeviceSimulatorError("active_hart_ids must select distinct physical harts")
++    if allowed is not None and any(h not in allowed for h in active):
++        raise DeviceSimulatorError("requested image includes a hart without the selected matrix unit")
++    extensions = list(dict.fromkeys([*isa.split("_"), *descriptor["isa_extensions"]]))
++    regions = descriptor.get("memory_regions", [memory])
++    if (not isinstance(regions, list) or not all(isinstance(r, (list, tuple)) and len(r) == 2
++            and all(type(v) is int for v in r) and r[0] >= 0 and r[1] > 0 for r in regions)
++            or list(memory) not in [list(r) for r in regions]):
++        raise DeviceSimulatorError("provider memory map does not contain requested image DRAM")
++    argv = [descriptor["binary"], "--isa=" + "_".join(extensions), f"-p{harts}",
++            "-m" + ",".join(f"{base:#x}:{size:#x}" for base, size in regions), *descriptor.get("launch_args", [])]
++    per_hart = descriptor.get("per_hart_isa")
++    if per_hart is not None:
++        for hart in range(harts):
++            selected = per_hart.get(str(hart))
++            if not isinstance(selected, str) or not selected:
++                raise DeviceSimulatorError(f"no declared ISA for requested hart {hart}")
++            argv.append(f"--hart-isa={hart}:{selected}")
++    argv.append(str(elf))
++    if not all(isinstance(a, str) for a in argv):
++        raise DeviceSimulatorError("provider launch arguments must be strings")
++    before = sha256(elf)
++    inputs = execution_inputs(descriptor)
++    proc = subprocess.run(argv, capture_output=True, timeout=timeout)
++    if sha256(elf) != before or sha256(descriptor["binary"]) != descriptor["binary_sha256"]:
++        raise DeviceSimulatorError("execution inputs changed during run")
++    if any(sha256(name) != value for name, value in inputs.items()):
++        raise DeviceSimulatorError("launcher/native/support inputs changed during run")
++    return {"argv": argv, "returncode": proc.returncode, "stdout": proc.stdout, "stderr": proc.stderr,
++            "elf_sha256": before, "execution_input_sha256": inputs, "simulator": descriptor}
