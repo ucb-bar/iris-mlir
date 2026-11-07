@@ -29,22 +29,22 @@
       "sha256": "fe5f040ec447f1a439b90b6a889c8cd93389fc0baf539e9df26afa8a7fdf06ad"
     },
     {
-      "path": "vme_kernel.py",
+      "path": "src/iris/lower/vme_kernel.py",
       "source": "saturn@vme 536774b benchmarks/common/vme_gemm.h, vme-fused-lm2-gemm-transpose",
       "change": "VME kernel emitter extracted from Merlin into this package",
       "sha256": "c0e992c3f1fbb6530ed0bc6659cd08bfd9f30da61f50e6685b379c61ae579acc"
     },
     {
-      "path": "vme_shim.py",
+      "path": "src/iris/lower/vme_shim.py",
       "source": "this package",
       "change": "VME contract, encoding, and object builder extracted from Merlin into this package; shared descriptor ABI remains in Merlin",
-      "sha256": "5fc80512de67087278885a5ca232674f97350cb738e90c4e7afc935195005887"
+      "sha256": "b0f0a6575616b7882b0c77cc97b385c2179e956f6b931427fd56502567a2716e"
     },
     {
-      "path": "matrix_lowering.py",
+      "path": "src/iris/backend.py",
       "source": "this package",
       "change": "plugin adapter for Merlin MatrixRouting, formatted without behavior change",
-      "sha256": "bc28cc6c40e4c1176bafea65c2e12b424804f44d0ffeea24876c100298f1189d"
+      "sha256": "99f00481a5cf9b2670a25489750a682657ca7846cdb4f85f3b5e2303da395e36"
     },
     {
       "path": "kernels/kernels.yaml",
@@ -65,10 +65,34 @@
       "sha256": "3a3747279e4b6de7ff5f588d33e11ea1b2b43912422e8718c9524d13da83b1ff"
     },
     {
-      "path": "extension.py",
+      "path": "src/iris/composition.py",
       "source": "this package",
       "change": "versioned accelerator extension adapter over the inherited RVV backend",
-      "sha256": "ec708ddb37dadf9cbd19c6248397f5f5f5783cfc3a3b9272f4ccbaf7687fe2f7"
+      "sha256": "62ef32f22d620df25795c0d73f0310050c9d5575d7aa6ebbc5f5cffba422658a"
+    },
+    {
+      "path": "backend.toml",
+      "source": "this package",
+      "change": "declared additive VME pipeline and explicit component plugin ownership",
+      "sha256": "482bdf02f0d925a2f90805de599928138a75dd77b9e62e27149f6df1f5adade2"
+    },
+    {
+      "path": "src/iris/placement.py",
+      "source": "this package",
+      "change": "Iris tile placement policy",
+      "sha256": "bf76dc965a18d5361054317537fc43cf17c59f4435702e5503bc57dcb8651dce"
+    },
+    {
+      "path": "src/iris/pipelines.py",
+      "source": "this package",
+      "change": "named VME pipeline addition over shared RVV fallback",
+      "sha256": "6812e3b9a73e73d69c7a0b985ea8ab09715cbdeffd123fdeb78fe01bbf6175f2"
+    },
+    {
+      "path": "src/iris/transforms/contraction.py",
+      "source": "this package",
+      "change": "VME ABI rewrite of selected contractions",
+      "sha256": "34bb61f4d441e961189491800aa05efef5ce159ba21bd737802c3f150acfd090"
     }
   ],
   "generated": {

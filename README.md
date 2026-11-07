@@ -24,10 +24,16 @@ are rewritten by Merlin into calls to `merlin_vme_gemm_i8_<n>`. This package sup
 | file | |
 |---|---|
 | `contracts/matrix_units.yaml` | where the unit's facts are read from: saturn's decode table (`opuInsns`, `Instructions.scala`), the host core's `BitPat`s and `kmax` table (rocket-chip `Matrix.scala`), the config, the cross-check header (`vme.h`), and the simulator. Declaration names only, plus the register-operand layouts with their sources |
-| `vme_kernel.py` | the GEMM microkernel, modeled on Miles Rusch's `vme_gemm.h` / `vme-fused-lm2-gemm-transpose`: a 2×2 super-tile of four TE×TE int32 tiles (`sf.vtzero.t`), `kmax` reduction rows per `sf.mm.s.s` (`altfmt` = B signed, `rd[0]` = A signed), readout with `sf.vtmv.v.t`, optional fused bias. Edge tiles run TE×TE with `sf.msettm`/`sf.msettn` clamped; a short last reduction step sets `sf.msettk`. No shape is refused |
-| `vme_shim.py` | reads the contract, derives encodings (`merlin.targetgen.rtl.matrix_isa`), geometry (TE = VLMAX at e8 of the vector unit whose params set `useOpu`; alignment = DLEN/8), wraps the kernel in Merlin's generic shim (`merlin.kernels.matrix_shim`), compiles it, records provenance; declares the simulator |
-| `matrix_lowering.py` | the plugin Merlin's `MatrixRouting` loads (`--matrix-support-target iris --matrix-unit saturn_vme --matrix-config IrisConfig`) |
+| `src/iris/lower/vme_kernel.py` | the GEMM microkernel, modeled on Miles Rusch's `vme_gemm.h` / `vme-fused-lm2-gemm-transpose`: a 2×2 super-tile of four TE×TE int32 tiles (`sf.vtzero.t`), `kmax` reduction rows per `sf.mm.s.s` (`altfmt` = B signed, `rd[0]` = A signed), readout with `sf.vtmv.v.t`, optional fused bias. Edge tiles run TE×TE with `sf.msettm`/`sf.msettn` clamped; a short last reduction step sets `sf.msettk`. No shape is refused |
+| `src/iris/lower/vme_shim.py` | reads the contract, derives encodings (`merlin.targetgen.rtl.matrix_isa`), geometry (TE = VLMAX at e8 of the vector unit whose params set `useOpu`; alignment = DLEN/8), wraps the kernel in Merlin's generic shim (`merlin.kernels.matrix_shim`), compiles it, records provenance; declares the simulator |
+| `src/iris/backend.py` | the plugin Merlin's `MatrixRouting` loads through the root `matrix_lowering.py` entrypoint (`--matrix-support-target iris --matrix-unit saturn_vme --matrix-config IrisConfig`) |
 | `kernels/` | hand-written VME kernels, their registry and `vme_api.h` ([Write your own kernel](#write-your-own-kernel)) |
+
+`backend.toml` declares Iris's VME W8A8 route as an additive implementation over the pinned RVV base.
+`src/iris/composition.py` checks that declaration and the pinned composition before binding the extension;
+`src/iris/placement.py`, `pipelines.py`, and `transforms/` supply the actual chip route. The root Python
+files are compatibility entrypoints for Merlin's existing plugin contract. RVV lowering and shared LLVM
+finalization remain in their respective providers; Iris defines no new dialect.
 
 Every instruction word is derived from the RTL and cross-checked against `vme.h`; with the simulator's
 source present also against its `riscv/encoding.h` (all ten instructions agree on every bit both state).
@@ -112,9 +118,9 @@ merlin-compile --workload <model> --dtype int8 --target rvv --board iris_rtl --h
 ```
 
 `merlin-target-compose --check .` (run by `tests/`) fails when the rvv base this layer pins has moved.
-`tests/test_matrix_lowering.py` checks the adapter, the contract, the kernel's refusals and the stand-in's
+`tests/lowering/test_matrix_lowering.py` checks the adapter, the contract, the kernel's refusals and the stand-in's
 tiling against a reference on the host; with `MERLIN_CHIPYARD_IRIS` set it also runs the derivation.
-`tests/test_kernels.py` checks the kernel registry and that `kernels/vme_api.h` spells every word exactly
+`tests/conformance/test_kernels.py` checks the kernel registry and that `kernels/vme_api.h` spells every word exactly
 as the saturn benchmarks' own `vme.h` does.
 
 ## Write your own kernel
@@ -154,7 +160,7 @@ not taken), `_R` statement forms, `_MATCH/_MASK`, and the configuration's facts:
 is `vme.h`'s own API with the same names and arguments -- `VME_MM_S_S(t, vs2, vs1)`, `VME_VTZERO(t)`,
 `VME_VTMV_V_T(vd, tss)`, `VME_VTDISCARD()`, `vme_vsettnt_e8w4_alt`, `vme_vsettnt_e32w1`, `vme_vsettm`,
 `vme_vsettk`, `vme_tss`, `VME_LOAD_ROW` -- so a benchmark kernel ports by changing its `#include`.
-`tests/test_kernels.py` checks that every one of those spells the same word as `vme.h`. `run.sh kernel-test`
+`tests/conformance/test_kernels.py` checks that every one of those spells the same word as `vme.h`. `run.sh kernel-test`
 writes `saturn_vme.h` beside its report so you can read it.
 
 **The template.** `kernels/vme_gemm_2x2_bias.c`: Miles Rusch's `vme_gemm_2x2_bias`
@@ -212,7 +218,7 @@ TorchAO source-model fidelity, FPGA timing, or physical Iris execution. A plain
 This package is a layer on [rvv-mlir](https://github.com/ucb-bar/rvv-mlir): `contracts/overlay.yaml` holds only what
 this chip adds or changes, and `contracts/target_contract.yaml` is base + overlay, generated. The base is a submodule
 at `base/rvv-mlir`, pinned to the same commit as `extends.commit` in `provider.yaml` (a test keeps the two equal).
-The inherited `rvv_codegen/` package supplies RVV pipeline construction, transforms, packing, and policy;
+The inherited RVV source package supplies RVV pipeline construction, transforms, packing, and policy;
 Iris adds the VME matrix route and does not copy those RVV implementations.
 
 ```sh

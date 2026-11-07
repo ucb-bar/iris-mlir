@@ -14,7 +14,7 @@ from merlin.targetgen import provider_compose
 from merlin.targetgen.plugins import validate
 from merlin.targetgen.providers import ProviderRole, read_provider
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_identity_layering_and_contract():

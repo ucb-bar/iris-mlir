@@ -1,9 +1,3 @@
-"""Iris's versioned accelerator extension over the inherited RVV backend."""
+"""Stable Merlin extension entrypoint; composition lives in ``src/iris``."""
 
-from merlin.targetgen.extension_offers import MatrixExtension
-
-API_VERSION = 1
-
-
-def bind(routing):
-    return MatrixExtension(routing)
+from .src.iris.composition import *
