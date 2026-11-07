@@ -57,6 +57,7 @@ matrix_contract: contracts/matrix_units.yaml
 # Executable support owned by THIS package: the whole-model route's contraction rewrite + VME kernel.
 plugin:
   matrix_lowering: matrix_lowering.py
+  extension: extension.py
 
 measurement:
   cycles_from: spike

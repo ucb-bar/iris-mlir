@@ -164,3 +164,4 @@ rtl_source:
 matrix_contract: contracts/matrix_units.yaml
 plugin:
   matrix_lowering: matrix_lowering.py
+  extension: extension.py
