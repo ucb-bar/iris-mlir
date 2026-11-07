@@ -5,7 +5,7 @@ Merlin support for **Iris** (chipyard `iris-cy`, `IrisConfig`). This repository 
 its boards, and its **VME/Xsfmm matrix unit**.
 
 ```
-rvv-mlir   (RVV contract, schedules)
+rvv-mlir   (RVV codegen, feature and policy passes, schedules, contract)
  ├── kodiak-mlir   (+ BME OPU, + Kodiak boards)
  └── iris-mlir     (+ VME matrix unit, + Iris boards)    <- this repo
 ```
@@ -212,6 +212,8 @@ TorchAO source-model fidelity, FPGA timing, or physical Iris execution. A plain
 This package is a layer on [rvv-mlir](https://github.com/ucb-bar/rvv-mlir): `contracts/overlay.yaml` holds only what
 this chip adds or changes, and `contracts/target_contract.yaml` is base + overlay, generated. The base is a submodule
 at `base/rvv-mlir`, pinned to the same commit as `extends.commit` in `provider.yaml` (a test keeps the two equal).
+The inherited `rvv_codegen/` package supplies RVV pipeline construction, transforms, packing, and policy;
+Iris adds the VME matrix route and does not copy those RVV implementations.
 
 ```sh
 git clone --recurse-submodules -b handwritten-implementation https://github.com/ucb-bar/<this-repo>.git
