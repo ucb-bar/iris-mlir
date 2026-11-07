@@ -123,6 +123,7 @@ keeps real pretrained layer weights and their original matrix shapes:
 ```sh
 export CAUSAL_LM_MODEL=TinyLlama/TinyLlama-1.1B-Chat-v1.0
 export CAUSAL_LM_REVISION=fe8a4ea1ffedaf415f4da2f062534de366a451e6
+uv pip install --python ../../out/build/venv/model2mlir/bin/python huggingface_hub
 ../../out/build/venv/model2mlir/bin/python -c \
   'import os; from huggingface_hub import snapshot_download; snapshot_download(os.environ["CAUSAL_LM_MODEL"], revision=os.environ["CAUSAL_LM_REVISION"])'
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
@@ -133,7 +134,9 @@ export CAUSAL_LM_LAYERS=2 CAUSAL_LM_ENTRY=embeds M2M_SEQ=64
 
 With network access, `from_pretrained` can fetch the checkpoint directly;
 the explicit prefetch above makes offline capture and the checkpoint revision
-check reproducible. A fresh download or recapture has a new identity;
+check reproducible. Check its `config.json` and `model.safetensors` hashes
+using Merlin's [source-capture guide](https://github.com/ucb-bar/merlin/blob/feat/OPU-VME/examples/workloads/causal_lm_section/README.md).
+A fresh download or recapture has a new identity;
 compare its numerical output with its own reference before comparing timings
 with another run. The full model can be captured separately, but its memory
 and simulation cost are much greater than this bounded section.
