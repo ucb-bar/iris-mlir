@@ -1,5 +1,25 @@
 # Validation of this integration
 
+## Pinned personal fork
+
+The native model is now pinned from
+`copparihollmann/riscv-isa-sim-gemmini`, branch `iris-model`, commit
+`f510cee1dede08bc0747f50f6933809304a30cb5`. Its README starts with the
+capability and single-hart/multicore timing tables. Seven focused admission tests
+cover both the archived frozen route and rejection of a development provider
+that differs from the pinned fork.
+
+A clean fork build produced native SHA256
+`cc9767615437f72ce7200d75df2aea39d6769a77b9a953c9c5c9bfc0d097c9ea`.
+It passed all 32 directed functional cases and the baremetal, Zephyr and
+profiling smokes with byte-identical frozen-reference stdout. Profiling admitted
+three regions and emitted JSON/Perfetto outputs. The exact source and receipt
+digests, including preserved earlier harness/packaging failures, are in
+[`fork-rebuild-validation.json`](spike-model/iris/provenance/fork-rebuild-validation.json).
+This migration does not establish new held-out timing accuracy.
+
+## Original frozen package integration
+
 Performed on amd6 on 2026-11-07, without FPGA access or changes to the frozen model:
 
 - Six hardware-free release admission tests pass. They check explicit opt-ins,

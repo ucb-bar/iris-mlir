@@ -1,13 +1,46 @@
 # Iris Spike development snapshot
 
-This branch connects the existing Iris compiler package to the frozen **35a**
-development simulator. It also preserves the native source patch and companion
-sources for import into a fork of
-[`riscv-software-src/riscv-isa-sim`](https://github.com/riscv-software-src/riscv-isa-sim).
-The base is `72958551566a30f19444bd7e354552824e4d0a98` plus our Iris changes.
-No separate Spike fork has been published by this change.
+The native model is maintained in
+[`copparihollmann/riscv-isa-sim-gemmini`, branch `iris-model`](https://github.com/copparihollmann/riscv-isa-sim-gemmini/tree/iris-model),
+pinned here at **`simulator/spike-model`**. That branch starts from upstream
+Spike `72958551566a30f19444bd7e354552824e4d0a98` and contains the Iris
+instruction, board, timing and profiling implementation. The existing Gemmini
+branches are separate. The model's README starts with its current capability,
+single-hart and multicore error/P90 tables.
 
-## Run now
+## Build and run the native fork
+
+```sh
+git submodule update --init simulator/spike-model
+python3 simulator/spike-model/iris/build.py \
+  --sdk-root /path/to/component-sdk-cache \
+  --verilator-include /path/to/matching/verilator/include \
+  --build /absolute/new-iris-build
+./simulator/iris-run --native-build /absolute/new-iris-build check
+./simulator/iris-run --native-build /absolute/new-iris-build compute kernel.elf --output /absolute/new-run
+./simulator/iris-run --native-build /absolute/new-iris-build zephyr zephyr.elf --output /absolute/new-os-run
+./simulator/iris-run --native-build /absolute/new-iris-build profile kernel.elf --output /absolute/new-profile-run
+```
+
+The model sources are in the pinned fork; only the byte-verified generated SDK
+archives and matching build tools remain external dependencies. No external
+`iris-model` native source checkout is needed to build this branch. The existing
+amd6 SDK cache is `/scratch/copparihollmann/iris-model`; the
+[fork build guide](spike-model/iris/BUILD.md) gives the matching local tool paths
+and explains the SDK generation limitation. New builds are explicitly
+development builds and do not inherit the frozen binary's timing qualification.
+
+For Merlin, set `MERLIN_IRIS_MODEL_MANIFEST` to the new build's
+`source_compute/manifest.json` or `source_os/manifest.json`, with
+`MERLIN_IRIS_TIMING=empirical` and `MERLIN_IRIS_ALLOW_EXPERIMENTAL_TIMING=1`.
+The adapter verifies that the selected provider bytes match the pinned fork and
+that the entire build/input closure remains unchanged.
+
+The remainder of this document preserves the historical frozen **35a** package
+and its measured results. The archived patch/source snapshot is retained as
+evidence; active native development belongs in `simulator/spike-model`.
+
+## Run the archived frozen 35a package
 
 The tested release currently requires the external `iris-model` workspace and
 its complete byte-bound artifact/evidence closure. On amd6 that workspace is

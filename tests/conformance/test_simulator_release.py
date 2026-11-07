@@ -38,6 +38,22 @@ class ReleaseAdmission(unittest.TestCase):
                 adapter.verified_model(manifest)
             self.assertFalse(marker.exists())
 
+    def test_development_provider_must_match_the_pinned_fork(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            marker = root / "executed"
+            pinned = root / "pinned.py"
+            pinned.write_text("# trusted provider bytes\n")
+            untrusted = root / "untrusted.py"
+            untrusted.write_text("from pathlib import Path\nPath(" + repr(str(marker)) + ").touch()\n")
+            manifest = root / "manifest.json"
+            manifest.write_text(json.dumps({"package_kind": adapter.NATIVE_KIND,
+                "model_provider": str(untrusted), "input_sha256": {str(untrusted): adapter.sha(untrusted)}}))
+            with patch.object(adapter, "NATIVE_PROVIDER", pinned):
+                with self.assertRaisesRegex(ValueError, "differs from the pinned"):
+                    adapter.verified_model(manifest)
+            self.assertFalse(marker.exists())
+
     def test_explicit_bad_selection_never_uses_legacy_spike(self):
         # The shim normally imports Merlin only for the legacy path; a bad
         # explicit selection must return its refusal before entering that path.

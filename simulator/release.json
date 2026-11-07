@@ -91,5 +91,13 @@
     "path": "merlin/heterogeneous-runner.patch",
     "sha256": "a120ddc8e7c796465a8c3ae32feed22a5fecc3ffc1bae1900799fe4c1b366875",
     "scope": "Historical generic backend delta against the companion baseline; not applied by this integration."
+  },
+  "source_fork": {
+    "repository": "https://github.com/copparihollmann/riscv-isa-sim-gemmini.git",
+    "branch": "iris-model",
+    "commit": "f510cee1dede08bc0747f50f6933809304a30cb5",
+    "path": "simulator/spike-model",
+    "upstream_commit": "72958551566a30f19444bd7e354552824e4d0a98",
+    "provider_sha256": "adf23fed947c1419e11bb83426d02572f4375bd085435d0354fdeaaf3c81d135"
   }
 }

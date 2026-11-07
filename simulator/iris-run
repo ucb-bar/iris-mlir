@@ -21,8 +21,11 @@ def adapter():
 
 def main():
     parser = argparse.ArgumentParser(__doc__)
-    parser.add_argument("--model-root", type=Path, default=os.environ.get("IRIS_MODEL_ROOT"),
-                        help="External verified iris-model workspace (required)")
+    location = parser.add_mutually_exclusive_group()
+    location.add_argument("--model-root", type=Path, default=os.environ.get("IRIS_MODEL_ROOT"),
+                          help="External frozen iris-model workspace")
+    location.add_argument("--native-build", type=Path,
+                          help="Build output of the pinned Spike fork's iris/build.py")
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("check", help="Verify both complete frozen profile closures")
     for name in ("compute", "zephyr", "profile"):
@@ -36,8 +39,37 @@ def main():
             child.add_argument("--region-format", choices=("none", "iris-json", "merlin-kernel-v1"),
                                default="iris-json")
     args = parser.parse_args()
+    if args.native_build is not None:
+        api = adapter()
+        names = ("source_compute", "source_os") if args.command == "check" else (
+            "source_os" if args.command == "zephyr" else "source_compute",)
+        try:
+            results = {}
+            for name in names:
+                manifest = args.native_build.resolve() / name / "manifest.json"
+                model = api.verified_model(manifest)
+                results[name] = {key: model[key] for key in
+                    ("available", "native_binary_sha256", "matrix_hart_ids", "accuracy_2percent_certified")}
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            parser.exit(1, "iris-run: " + str(error) + "\n")
+        if args.command == "check":
+            print(json.dumps(results, indent=2))
+            return 0
+        if args.command == "profile" and (args.region_map is not None or args.region_format != "iris-json"):
+            parser.error("Native fork profiling currently uses the default iris-json region format")
+        provider = Path(api.load(manifest)["model_provider"])
+        script = provider.parents[1] / "run.py"
+        argv = [sys.executable, str(script), "--build", str(args.native_build.resolve()),
+                "--profile", names[0], "--elf", str(args.elf.resolve()),
+                "--output", str(args.output.resolve()), "--timeout", str(args.timeout), "--seed", str(args.seed)]
+        if args.command == "profile":
+            argv.append("--source-profile")
+        os.environ["IRIS_MLIR_ADAPTER_SHA256"] = api.sha(ROOT / "src/iris/simulator.py")
+        os.environ["IRIS_MLIR_RELEASE_SHA256"] = api.sha(api.RELEASE)
+        os.environ["IRIS_MLIR_LAUNCHER_SHA256"] = api.sha(__file__)
+        os.execv(sys.executable, argv)
     if args.model_root is None:
-        parser.error("Select --model-root /path/to/iris-model or set IRIS_MODEL_ROOT")
+        parser.error("Select --model-root /path/to/iris-model or --native-build /path/to/build (or IRIS_MODEL_ROOT)")
     model_root = args.model_root.resolve()
     api = adapter()
     try:

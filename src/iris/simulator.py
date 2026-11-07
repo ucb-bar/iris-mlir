@@ -12,6 +12,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 RELEASE = ROOT / "simulator" / "release.json"
+NATIVE_PROVIDER = ROOT / "simulator/spike-model/iris/tools/native_model.py"
+NATIVE_KIND = "iris.vendored_native_development.v1"
 
 
 def sha(path):
@@ -46,13 +48,15 @@ def verified_model(manifest):
     release = load(RELEASE)
     path = Path(manifest).resolve()
     digest = sha(path)
+    record = load(path)
+    if record.get("package_kind") == NATIVE_KIND:
+        return verified_native(path, record)
     profiles = release["profiles"]
     matches = [name for name, value in profiles.items()
                if value["manifest_sha256"] == digest]
     if len(matches) != 1:
         raise ValueError("Manifest is not one of the recorded frozen 35a profiles")
     profile = matches[0]
-    record = load(path)
     if record.get("profile") != profile:
         raise ValueError("Profile identity differs from the frozen release")
     provider_path = Path(record["model_provider"])
@@ -72,6 +76,41 @@ def verified_model(manifest):
             or result.get("matrix_hart_ids") != [0, 1]
             or result.get("accuracy_2percent_certified") is not False):
         raise ValueError("Release ISA, native identity or qualification differs")
+    return bind_adapter(result)
+
+
+def verified_native(path, record):
+    """Admit only the provider code from the pinned Iris Spike submodule.
+
+    A descriptor from a separate checkout is permitted when its provider bytes
+    match the pinned provider; that provider checks the entire built input set.
+    """
+    if not NATIVE_PROVIDER.is_file():
+        raise ValueError("Initialize the simulator/spike-model submodule")
+    provider_path = Path(record["model_provider"])
+    expected = load(RELEASE)["source_fork"]["provider_sha256"]
+    if (sha(NATIVE_PROVIDER) != expected or not provider_path.is_absolute() or sha(provider_path) != expected
+            or record.get("input_sha256", {}).get(str(provider_path)) != expected):
+        raise ValueError("Development provider differs from the pinned Iris Spike provider")
+    spec = importlib.util.spec_from_file_location("iris_pinned_native_provider", provider_path)
+    provider = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(provider)
+    result = provider.experimental_empirical_simulator(path)
+    if not isinstance(result, dict) or result.get("available") is not True:
+        reason = result.get("reason") if isinstance(result, dict) else "invalid provider response"
+        raise ValueError("Development model refused: " + str(reason))
+    release = load(RELEASE)
+    profile = record.get("profile")
+    if (profile not in release["profiles"]
+            or result.get("per_hart_isa") != release["profiles"][profile]["per_hart_isa"]
+            or result.get("matrix_hart_ids") != [0, 1]
+            or result.get("accuracy_2percent_certified") is not False):
+        raise ValueError("Development model changed Iris hart or qualification metadata")
+    result["execution_input_sha256"][str(NATIVE_PROVIDER.resolve())] = expected
+    return bind_adapter(result)
+
+
+def bind_adapter(result):
     result = dict(result)
     inputs = dict(result["execution_input_sha256"])
     inputs.update({str(Path(__file__).resolve()): sha(__file__), str(RELEASE): sha(RELEASE)})

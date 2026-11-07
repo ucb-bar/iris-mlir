@@ -2,3 +2,7 @@
 	path = base/rvv-mlir
 	url = https://github.com/ucb-bar/rvv-mlir.git
 	branch = handwritten-implementation
+[submodule "simulator/spike-model"]
+	path = simulator/spike-model
+	url = https://github.com/copparihollmann/riscv-isa-sim-gemmini.git
+	branch = iris-model

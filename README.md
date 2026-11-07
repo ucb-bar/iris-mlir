@@ -4,7 +4,11 @@ Merlin support for **Iris** (chipyard `iris-cy`, `IrisConfig`). This repository 
 [`rvv-mlir`](https://github.com/ucb-bar/rvv-mlir). It inherits all of RVV and adds Iris's configuration,
 its boards, and its **VME/Xsfmm matrix unit**.
 
-The [Iris development simulator](simulator/README.md) adds explicit frozen
+Our Iris-specific Spike fork lives in
+[`copparihollmann/riscv-isa-sim-gemmini`, branch `iris-model`](https://github.com/copparihollmann/riscv-isa-sim-gemmini/tree/iris-model),
+pinned as the `simulator/spike-model` submodule. Its README starts with the
+latest capability and single-hart/multicore accuracy tables. The
+[Iris development simulator](simulator/README.md) also retains explicit frozen
 three-hart Spike profiles for baremetal compute, Zephyr, and JSON/Perfetto
 profiling. Start with `IRIS_MODEL_ROOT=/path/to/iris-model ./simulator/iris-run check`.
 Its source handoff, calibration fixtures and measured accuracy limits are in
