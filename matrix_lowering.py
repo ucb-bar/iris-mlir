@@ -7,6 +7,8 @@ adapter certifies nothing by itself; the gates are the build's audit, the twin a
 
 from . import vme_shim
 
+API_VERSION = 1
+
 signature_sidecar_name = vme_shim.SIDECAR_NAME
 SIDECAR_NAME = vme_shim.SIDECAR_NAME
 shim = vme_shim
