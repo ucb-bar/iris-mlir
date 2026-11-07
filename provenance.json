@@ -44,7 +44,7 @@
       "path": "matrix_lowering.py",
       "source": "this package",
       "change": "plugin adapter for Merlin MatrixRouting, formatted without behavior change",
-      "sha256": "f3ad82d5f3d9910452fb8367bfabf0d7ce5016d6b26f87561fd41f3712094bd9"
+      "sha256": "bc28cc6c40e4c1176bafea65c2e12b424804f44d0ffeea24876c100298f1189d"
     },
     {
       "path": "kernels/kernels.yaml",
@@ -63,6 +63,12 @@
       "source": "saturn@vme 536774b benchmarks/vme-fused-lm2-gemm-transpose/main.c (Miles Rusch)",
       "change": "vme_gemm_2x2_bias ported to the matrix-kernel ABI, edges by vme_gemm_tiled",
       "sha256": "3a3747279e4b6de7ff5f588d33e11ea1b2b43912422e8718c9524d13da83b1ff"
+    },
+    {
+      "path": "extension.py",
+      "source": "this package",
+      "change": "versioned accelerator extension adapter over the inherited RVV backend",
+      "sha256": "ec708ddb37dadf9cbd19c6248397f5f5f5783cfc3a3b9272f4ccbaf7687fe2f7"
     }
   ],
   "generated": {
