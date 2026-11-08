@@ -14,8 +14,9 @@ export MERLIN_SUPPORT_PINS="$PWD/contracts/streaming_support_pins.json"
 
 This feature pins RVV commit `250e93e726f373810776bd5113939e51c4162cad`.
 The explicit development manifest satisfies Merlin's single-base check while
-leaving its global support pins unchanged. It requires the exact local feature
-checkout; it does not claim this unpublished branch can already be fetched.
+leaving its global support pins unchanged. The RVV dependency is published on `ucb-bar/rvv-mlir`
+branch `handwritten-implementation`. Initialize the pinned submodule before
+using this opt-in route.
 
 Use the public matrix-lowering entry point with Merlin's existing preparation
 and lowering APIs. `source` is an existing typed MLIR file, and `work` is a new
@@ -91,3 +92,27 @@ Check the actual lowered LLVM and final image for allocations/copies and run a
 complete numerical gate before evaluating performance. Compare against the
 best legal RVV panel configuration on the same inputs, not an untuned full
 im2col control. Functional Spike instruction counts are not hardware cycles.
+
+
+## First actual compiler FPGA check
+
+A small NCHW case (batch2, Ci2, Co32, OH3, OW7, 3x3 filter,
+stride-H2, dilation-W2, panel4 with tail3) passed all12 regions and
+16,128 independent I32 word checks through the complete managed FireSim
+lifecycle, cleanup and archive. After one warmup, two measured repetitions gave:
+
+| Route | Full-im2col cycles | Streaming cycles | Cycle change |
+|---|---:|---:|---:|
+| RVV | 527,108.5 | 768,097 | +45.72% |
+| VME | 34,824.5 | 53,568 | +53.82% |
+
+These are guest `mcycle` counts on the existing VLEN256/DLEN128 image,
+not a timing-model accuracy certificate. The streaming schedule remains opt-in;
+this small tail-heavy case exposes extra loop/packing overhead. Both routes
+use identical input bytes and signed integer math, but their authored graphs
+and returned output layouts differ. Each full-versus-stream pair is valid;
+a cross-backend RVV-versus-VME speedup is not qualified by this packet.
+The exact checksums differ only by that output permutation. See the
+[measurement receipt](measurements/compiled_streaming_20261108.json) for hashes
+and scope. Physical RVV/VME/core/DMA busy fractions are unavailable; architectural
+lane fill and retired instruction mix must be reported separately.

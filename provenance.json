@@ -50,7 +50,7 @@
       "path": "kernels/kernels.yaml",
       "source": "this package",
       "change": "matrix kernel registry (merlin.matrix_kernels.v1): default generated kernel, hand-written kernels and their constraints",
-      "sha256": "0d6425127998f12942261545ff147623439d0448804afa9a392ddd8318f26dd5"
+      "sha256": "afebb55b783e67b57f417daef04e363012ea059730e98a4eea241587f985ab57"
     },
     {
       "path": "kernels/vme_api.h",
@@ -110,13 +110,19 @@
       "path": "docs/STREAMING_IM2COL.md",
       "source": "Iris provider authored; RVV panel API @250e93e726f373810776bd5113939e51c4162cad; existing matrix unit contract/derived geometry",
       "change": "Opt-in signed-I8 streaming window schedule and strict tests; no default, hardware timing or physical utilization claim",
-      "sha256": "baea17ecf827ea53610da5aa33c6e230aec4008c9abd79c8290ddee0e66308a0"
+      "sha256": "2664fbf3b5223f58ae4eba94620c2316b23fdeef3dc782da88399cde2b007ae0"
     },
     {
       "path": "contracts/streaming_support_pins.json",
       "source": "Iris provider authored; RVV panel API @250e93e726f373810776bd5113939e51c4162cad; existing matrix unit contract/derived geometry",
       "change": "Opt-in signed-I8 streaming window schedule and strict tests; no default, hardware timing or physical utilization claim",
-      "sha256": "a6020fcf9d3a0e2e9fd6c7c1e3770b9d1ca1cb9c6acc09c72f5da92edd84b856"
+      "sha256": "f6c093ac3815b3c6c06f498c3873f40fdca2076e0c4a7a83b05867fa272cf998"
+    },
+    {
+      "path": "kernels/vme_gemm_1x2_reuse.c",
+      "source": "Iris scheduling development; full source and measured artifact pins in docs/measurements/vme_1x2_20261108.json",
+      "change": "Explicit opt-in guarded signed-INT8 partial-M 1x2 A reuse; measured prototype, fresh native package gate; exact package hardware timing unqualified",
+      "sha256": "8d0eb0f4da4c8cb9c17309df9c8d5791db5f99e7c0a3371a51d2dfde4181fec1"
     }
   ],
   "generated": {

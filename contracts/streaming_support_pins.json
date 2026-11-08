@@ -6,7 +6,7 @@
     "base": {
       "target": "rvv",
       "repo": "https://github.com/ucb-bar/rvv-mlir.git",
-      "branch": "feat/utilization-vlen",
+      "branch": "handwritten-implementation",
       "commit": "250e93e726f373810776bd5113939e51c4162cad",
       "tree": "0db07839a095452d61d5d2d02d501dd24083c337"
     },

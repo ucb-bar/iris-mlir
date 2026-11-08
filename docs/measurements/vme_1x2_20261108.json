@@ -55,9 +55,9 @@
       "archive_sha256": "451366f0c1f5593514de5d7548b7f8eb02d8dbbf1427a5d5a86d01e20d738903",
       "strict_postgate_report_sha256": "09373de0317dbc51ae77c95e3083443e31fb4851b534b836218cf6f02ec38a3e",
       "profile_report_sha256": "e9ef9563af2b8ff45f4fc5816160663710f0cac8cf0638dbebe434183cbcd2f1",
-      "image_sha256": "9bbe1f12a2b18091c28b05ea43c001e579f70c8cfef0f528fcb49003212fb776",
-      "driver_sha256": "5457de1e9c0dd1e3c52efbf5d083bdac7dfa5a5e3124c9887961c08159b03450",
-      "four_managed_phases_passed": true
+      "four_managed_phases_passed": true,
+      "image_archive_sha256": "9bbe1f12a2b18091c28b05ea43c001e579f70c8cfef0f528fcb49003212fb776",
+      "driver_bundle_sha256": "5457de1e9c0dd1e3c52efbf5d083bdac7dfa5a5e3124c9887961c08159b03450"
     },
     {
       "job_id": "schedule-big",
@@ -65,9 +65,9 @@
       "archive_sha256": "1525343189f8b063fac005ae5004a20a92d0ac8cbc37a1e2aa3d51726ad92f10",
       "strict_postgate_report_sha256": "1b4f2df5d940dc08a30ad98d606cdb5f0be7f3b6447f6c506117c808dba3fe48",
       "profile_report_sha256": "f6f2643adcca9854ec5b1ed3b7a9773bafb5bafe65c1e914c86ac61bc241aa87",
-      "image_sha256": "9bbe1f12a2b18091c28b05ea43c001e579f70c8cfef0f528fcb49003212fb776",
-      "driver_sha256": "5457de1e9c0dd1e3c52efbf5d083bdac7dfa5a5e3124c9887961c08159b03450",
-      "four_managed_phases_passed": true
+      "four_managed_phases_passed": true,
+      "image_archive_sha256": "9bbe1f12a2b18091c28b05ea43c001e579f70c8cfef0f528fcb49003212fb776",
+      "driver_bundle_sha256": "5457de1e9c0dd1e3c52efbf5d083bdac7dfa5a5e3124c9887961c08159b03450"
     }
   ],
   "measurements": [

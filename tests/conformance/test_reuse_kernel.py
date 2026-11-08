@@ -1,7 +1,7 @@
 """Admission checks for the opt-in kernel; native numerical evidence is separate."""
-from pathlib import Path
 import ctypes
 import subprocess
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
