@@ -1,0 +1,15 @@
+{
+  "schema": "merlin.upstream_support_migration.v3",
+  "status": "explicit_local_streaming_development_selection",
+  "qualification_scope": "Selects the exact RVV dependency for an explicitly supplied Iris provider. Does not publish or certify either checkout, change global defaults, or pin unrelated targets.",
+  "pinned_support": {
+    "base": {
+      "target": "rvv",
+      "repo": "https://github.com/ucb-bar/rvv-mlir.git",
+      "branch": "feat/utilization-vlen",
+      "commit": "250e93e726f373810776bd5113939e51c4162cad",
+      "tree": "0db07839a095452d61d5d2d02d501dd24083c337"
+    },
+    "packages": []
+  }
+}

@@ -37,8 +37,37 @@ def selector(tile_edge):
     return placement.selector(tile_edge)
 
 
+def streaming_selector(
+    *, unit, config, workspace_bytes, vlen_bits, panel_rows=None, select=None
+):
+    """Opt in to bounded signed-I8 window panels using the selected RTL facts.
+
+    Pass this callable as ``MatrixRouting.select``. The explicit VLEN is checked
+    against the unit; DLEN is read independently. No cache size is inferred.
+    """
+    from .transforms.streaming import StreamingOptions, StreamingSelector
+
+    contract = load_contract(unit)
+    facts = contract.vector_params(config)
+    if vlen_bits != int(facts["vLen"]):
+        raise ValueError("requested streaming VLEN disagrees with selected unit")
+    edge, _ = contract.geometry(config)
+    options = StreamingOptions(
+        unit=unit,
+        config=config,
+        vlen_bits=vlen_bits,
+        dlen_bits=int(facts["dLen"]),
+        tile_edge=edge,
+        workspace_bytes=workspace_bytes,
+        panel_rows=panel_rows,
+    )
+    return StreamingSelector(select if select is not None else selector(edge), options)
+
+
 def rewrite_prepared_file(prepared, work, *, select, tile_edge):
-    return pipelines.rewrite_prepared_file(prepared, work, select=select, tile_edge=tile_edge)
+    return pipelines.rewrite_prepared_file(
+        prepared, work, select=select, tile_edge=tile_edge
+    )
 
 
 def load_signatures(work):
@@ -59,8 +88,17 @@ def build_object(
 ):
     """``kernel``: a hand-written kernel Merlin selected from ``kernels/kernels.yaml``
     (``merlin.kernels.matrix_kernels.KernelChoice``); None builds the generated kernel exactly as before."""
+    from .transforms.streaming import build_schedule_provenance
+
+    schedule = build_schedule_provenance(
+        work,
+        signatures=signatures,
+        unit=unit,
+        config=config,
+        parallel_tiles=parallel_tiles,
+    )
     extra = {} if kernel is None else {"kernel": kernel}
-    return vme_shim.build_object(
+    built = vme_shim.build_object(
         signatures,
         work,
         unit=unit,
@@ -71,6 +109,11 @@ def build_object(
         parallel_tiles=parallel_tiles,
         **extra,
     )
+    if schedule is None:
+        return built
+    from dataclasses import replace
+
+    return replace(built, provenance={**built.provenance, "streaming_im2col": schedule})
 
 
 def device_simulator(*, unit, config):

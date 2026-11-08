@@ -44,7 +44,7 @@
       "path": "src/iris/backend.py",
       "source": "this package",
       "change": "plugin adapter for Merlin MatrixRouting, formatted without behavior change",
-      "sha256": "99f00481a5cf9b2670a25489750a682657ca7846cdb4f85f3b5e2303da395e36"
+      "sha256": "98879caa4b1cb49aca18325986ec3c1c2042f8bc0adc490d764464abe56ea01e"
     },
     {
       "path": "kernels/kernels.yaml",
@@ -92,7 +92,31 @@
       "path": "src/iris/transforms/contraction.py",
       "source": "this package",
       "change": "VME ABI rewrite of selected contractions",
-      "sha256": "34bb61f4d441e961189491800aa05efef5ce159ba21bd737802c3f150acfd090"
+      "sha256": "9ac8c323c44f040b9d777cc1100b7c116ab4e4d7ca5d916f9f5afffa1d838372"
+    },
+    {
+      "path": "src/iris/transforms/streaming.py",
+      "source": "Iris provider authored; RVV panel API @250e93e726f373810776bd5113939e51c4162cad; existing matrix unit contract/derived geometry",
+      "change": "Opt-in signed-I8 streaming window schedule and strict tests; no default, hardware timing or physical utilization claim",
+      "sha256": "dcf8716082a17fbf37a9c49e98b6c5c6b0f5bf31bb4c80304710666b3aba7b52"
+    },
+    {
+      "path": "tests/lowering/test_streaming_im2col.py",
+      "source": "Iris provider authored; RVV panel API @250e93e726f373810776bd5113939e51c4162cad; existing matrix unit contract/derived geometry",
+      "change": "Opt-in signed-I8 streaming window schedule and strict tests; no default, hardware timing or physical utilization claim",
+      "sha256": "53a65a2172ba2fbd1353e0cbc54a7d582a339b6b312fbd25c45ec75858856548"
+    },
+    {
+      "path": "docs/STREAMING_IM2COL.md",
+      "source": "Iris provider authored; RVV panel API @250e93e726f373810776bd5113939e51c4162cad; existing matrix unit contract/derived geometry",
+      "change": "Opt-in signed-I8 streaming window schedule and strict tests; no default, hardware timing or physical utilization claim",
+      "sha256": "baea17ecf827ea53610da5aa33c6e230aec4008c9abd79c8290ddee0e66308a0"
+    },
+    {
+      "path": "contracts/streaming_support_pins.json",
+      "source": "Iris provider authored; RVV panel API @250e93e726f373810776bd5113939e51c4162cad; existing matrix unit contract/derived geometry",
+      "change": "Opt-in signed-I8 streaming window schedule and strict tests; no default, hardware timing or physical utilization claim",
+      "sha256": "a6020fcf9d3a0e2e9fd6c7c1e3770b9d1ca1cb9c6acc09c72f5da92edd84b856"
     }
   ],
   "generated": {

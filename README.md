@@ -242,3 +242,8 @@ MERLIN_TARGET_PATH=base/rvv-mlir merlin-target-compose . --check     # is the ge
 Changes that belong to every RVV chip go to rvv-mlir itself (commit and push there). Changes for this chip only go
 in `contracts/overlay.yaml` (use `replace:` / `remove:` to override a base fact). To move to a newer base:
 `git -C base/rvv-mlir checkout <sha>`, set `extends.commit` to the same sha, run `merlin-target-compose .`, commit.
+
+The feature branch also provides an explicit [streaming INT8 im2col→VME route](docs/STREAMING_IM2COL.md).
+It uses the inherited RVV panel builder, preserves the existing matrix ABI and
+records bounded panel payloads and row tails. It is opt-in, currently requires
+one compute hart, and carries no compiler-kernel FPGA speed claim.
