@@ -45,3 +45,16 @@ kernels:
       four tiles zeroed with sf.vtzero.t, kmax rows per sf.mm, bias added on the way out; edges by
       vme_gemm_tiled's one-tile loop. The starting point for a kernel of your own.
     constraints: {}
+
+  vme_gemm_1x2_reuse:
+    unit: saturn_vme
+    file: vme_gemm_1x2_reuse.c
+    function: vme_gemm_1x2_reuse
+    author: Derived from Miles Rusch's VME kernel and the Iris scheduling ablation
+    description: >-
+      Experimental signed-INT8 1x2-N blocking with shared A and paired readout.
+      Uses actual TE/readout state; unsupported shapes or register geometry and
+      OpenMP builds retain the original 2x2/single-tile path. Not a universal
+      winner; select explicitly and measure total caller latency.
+    constraints:
+      bias: false

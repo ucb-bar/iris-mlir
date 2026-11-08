@@ -1,0 +1,930 @@
+{
+  "schema": "iris.vme_reuse_measurement_reference.v1",
+  "hardware_scope": {
+    "hart": 0,
+    "other_harts": "parked",
+    "VLEN_bits": 256,
+    "DLEN_bits": 128,
+    "observed_INT8_TE": 32,
+    "bias": null,
+    "warmup_calls_per_variant": 1,
+    "measured_calls_per_variant": 2
+  },
+  "source_pins": {
+    "chipyard": {
+      "commit": "b4542facf6cc9457f6e358e8f80a8b3a0ff5df19",
+      "tracked_modified": true,
+      "tracked_diff_sha256": "03f32d1d00ad22b0f976a370632f10496fc0b57792e36dffa228c11d983a2ecd"
+    },
+    "saturn": {
+      "commit": "536774bd4c5e3bcd7813a4a0dc72fc87e5818532",
+      "tracked_modified": true,
+      "tracked_diff_sha256": "79e734508b780ddef01ca8eeb726bf5bbf0945f1998b4a4370e83df0ce4df60b"
+    },
+    "rocket-chip": {
+      "commit": "fc745a8c377fdbf1d278eea81da9ac47b4b5fbc0",
+      "tracked_modified": false,
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "shuttle": {
+      "commit": "a536ed1df91a0f65770e36758291d02a8cb929c4",
+      "tracked_modified": false,
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "testchipip": {
+      "commit": "86c9a824fd42b854526018f9111087b0f3d1d31c",
+      "tracked_modified": false,
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "spike_chipyard_pin": {
+      "commit": "9c190a07c6838f6392bafa4ad83acea462c7f759",
+      "tracked_modified": false,
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "firesim": {
+      "commit": "69b17767e0b227e31ea341c50899e49f02d6f5ea",
+      "tracked_modified": true,
+      "tracked_diff_sha256": "207d3b6cb1d022ca3d00c3ff9abe465f9e5934e2c7b999348505c3d9da8cd6a0"
+    }
+  },
+  "native_spike_commit": "892347034098fba6e37382902777b3d0b08346ef",
+  "runs": [
+    {
+      "job_id": "schedule-small",
+      "ELF_sha256": "379530b503f9d2294d0ac0257bece3f0f31acacbf881ad4f0f1ad8ccb738641c",
+      "archive_sha256": "451366f0c1f5593514de5d7548b7f8eb02d8dbbf1427a5d5a86d01e20d738903",
+      "strict_postgate_report_sha256": "09373de0317dbc51ae77c95e3083443e31fb4851b534b836218cf6f02ec38a3e",
+      "profile_report_sha256": "e9ef9563af2b8ff45f4fc5816160663710f0cac8cf0638dbebe434183cbcd2f1",
+      "image_sha256": "9bbe1f12a2b18091c28b05ea43c001e579f70c8cfef0f528fcb49003212fb776",
+      "driver_sha256": "5457de1e9c0dd1e3c52efbf5d083bdac7dfa5a5e3124c9887961c08159b03450",
+      "four_managed_phases_passed": true
+    },
+    {
+      "job_id": "schedule-big",
+      "ELF_sha256": "ac7b0f9765e60d585bfe0ae24f5725c574688c5880c38c9b537c9b718b1aa9ff",
+      "archive_sha256": "1525343189f8b063fac005ae5004a20a92d0ac8cbc37a1e2aa3d51726ad92f10",
+      "strict_postgate_report_sha256": "1b4f2df5d940dc08a30ad98d606cdb5f0be7f3b6447f6c506117c808dba3fe48",
+      "profile_report_sha256": "f6f2643adcca9854ec5b1ed3b7a9773bafb5bafe65c1e914c86ac61bc241aa87",
+      "image_sha256": "9bbe1f12a2b18091c28b05ea43c001e579f70c8cfef0f528fcb49003212fb776",
+      "driver_sha256": "5457de1e9c0dd1e3c52efbf5d083bdac7dfa5a5e3124c9887961c08159b03450",
+      "four_managed_phases_passed": true
+    }
+  ],
+  "measurements": [
+    {
+      "case": "sched_m32_n256_k16",
+      "m": 32,
+      "n": 256,
+      "k": 16,
+      "variant": "RVV_I8_clean",
+      "role": "scheduling_development",
+      "cycles_median": 265817.0,
+      "target_cycle_samples": [
+        266352,
+        265282
+      ],
+      "retired_instruction_samples": [
+        12650,
+        12650
+      ],
+      "useful_MACs": 131072,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m32_n256_k16",
+      "m": 32,
+      "n": 256,
+      "k": 16,
+      "variant": "VME_baseline_k4_serial",
+      "role": "scheduling_development",
+      "cycles_median": 266959.5,
+      "target_cycle_samples": [
+        269192,
+        264727
+      ],
+      "retired_instruction_samples": [
+        3295,
+        3295
+      ],
+      "useful_MACs": 131072,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m32_n256_k16",
+      "m": 32,
+      "n": 256,
+      "k": 16,
+      "variant": "VME_full2x2_k4_dual",
+      "role": "scheduling_development",
+      "cycles_median": 268677.0,
+      "target_cycle_samples": [
+        268357,
+        268997
+      ],
+      "retired_instruction_samples": [
+        3299,
+        3299
+      ],
+      "useful_MACs": 131072,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m32_n256_k16",
+      "m": 32,
+      "n": 256,
+      "k": 16,
+      "variant": "VME_partial1x2_k4_dual",
+      "role": "scheduling_development",
+      "cycles_median": 266172.0,
+      "target_cycle_samples": [
+        264622,
+        267722
+      ],
+      "retired_instruction_samples": [
+        2227,
+        2227
+      ],
+      "useful_MACs": 131072,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m32_n256_k64",
+      "m": 32,
+      "n": 256,
+      "k": 64,
+      "variant": "RVV_I8_clean",
+      "role": "scheduling_development",
+      "cycles_median": 393132.0,
+      "target_cycle_samples": [
+        393927,
+        392337
+      ],
+      "retired_instruction_samples": [
+        46442,
+        46442
+      ],
+      "useful_MACs": 524288,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m32_n256_k64",
+      "m": 32,
+      "n": 256,
+      "k": 64,
+      "variant": "VME_baseline_k4_serial",
+      "role": "scheduling_development",
+      "cycles_median": 367849.5,
+      "target_cycle_samples": [
+        369652,
+        366047
+      ],
+      "retired_instruction_samples": [
+        6463,
+        6463
+      ],
+      "useful_MACs": 524288,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m32_n256_k64",
+      "m": 32,
+      "n": 256,
+      "k": 64,
+      "variant": "VME_full2x2_k4_dual",
+      "role": "scheduling_development",
+      "cycles_median": 368253.0,
+      "target_cycle_samples": [
+        368757,
+        367749
+      ],
+      "retired_instruction_samples": [
+        6467,
+        6467
+      ],
+      "useful_MACs": 524288,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m32_n256_k64",
+      "m": 32,
+      "n": 256,
+      "k": 64,
+      "variant": "VME_partial1x2_k4_dual",
+      "role": "scheduling_development",
+      "cycles_median": 371352.0,
+      "target_cycle_samples": [
+        369962,
+        372742
+      ],
+      "retired_instruction_samples": [
+        4387,
+        4387
+      ],
+      "useful_MACs": 524288,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m32_n256_k256",
+      "m": 32,
+      "n": 256,
+      "k": 256,
+      "variant": "RVV_I8_clean",
+      "role": "scheduling_development",
+      "cycles_median": 1167510.5,
+      "target_cycle_samples": [
+        1166127,
+        1168894
+      ],
+      "retired_instruction_samples": [
+        181610,
+        181610
+      ],
+      "useful_MACs": 2097152,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m32_n256_k256",
+      "m": 32,
+      "n": 256,
+      "k": 256,
+      "variant": "VME_baseline_k4_serial",
+      "role": "scheduling_development",
+      "cycles_median": 766174.5,
+      "target_cycle_samples": [
+        766052,
+        766297
+      ],
+      "retired_instruction_samples": [
+        19135,
+        19135
+      ],
+      "useful_MACs": 2097152,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m32_n256_k256",
+      "m": 32,
+      "n": 256,
+      "k": 256,
+      "variant": "VME_full2x2_k4_dual",
+      "role": "scheduling_development",
+      "cycles_median": 767904.5,
+      "target_cycle_samples": [
+        770587,
+        765222
+      ],
+      "retired_instruction_samples": [
+        19139,
+        19139
+      ],
+      "useful_MACs": 2097152,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m32_n256_k256",
+      "m": 32,
+      "n": 256,
+      "k": 256,
+      "variant": "VME_partial1x2_k4_dual",
+      "role": "scheduling_development",
+      "cycles_median": 786364.5,
+      "target_cycle_samples": [
+        786642,
+        786087
+      ],
+      "retired_instruction_samples": [
+        13027,
+        13027
+      ],
+      "useful_MACs": 2097152,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m32_n256_k2048",
+      "m": 32,
+      "n": 256,
+      "k": 2048,
+      "variant": "RVV_I8_clean",
+      "role": "scheduling_development",
+      "cycles_median": 27962813.5,
+      "target_cycle_samples": [
+        27962630,
+        27962997
+      ],
+      "retired_instruction_samples": [
+        1443178,
+        1443178
+      ],
+      "useful_MACs": 16777216,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m32_n256_k2048",
+      "m": 32,
+      "n": 256,
+      "k": 2048,
+      "variant": "VME_baseline_k4_serial",
+      "role": "scheduling_development",
+      "cycles_median": 6988357.5,
+      "target_cycle_samples": [
+        7017665,
+        6959050
+      ],
+      "retired_instruction_samples": [
+        137407,
+        137407
+      ],
+      "useful_MACs": 16777216,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m32_n256_k2048",
+      "m": 32,
+      "n": 256,
+      "k": 2048,
+      "variant": "VME_full2x2_k4_dual",
+      "role": "scheduling_development",
+      "cycles_median": 6963620.0,
+      "target_cycle_samples": [
+        6986425,
+        6940815
+      ],
+      "retired_instruction_samples": [
+        137411,
+        137411
+      ],
+      "useful_MACs": 16777216,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m32_n256_k2048",
+      "m": 32,
+      "n": 256,
+      "k": 2048,
+      "variant": "VME_partial1x2_k4_dual",
+      "role": "scheduling_development",
+      "cycles_median": 4853785.0,
+      "target_cycle_samples": [
+        4854230,
+        4853340
+      ],
+      "retired_instruction_samples": [
+        93667,
+        93667
+      ],
+      "useful_MACs": 16777216,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m32_n2048_k256",
+      "m": 32,
+      "n": 2048,
+      "k": 256,
+      "variant": "RVV_I8_clean",
+      "role": "scheduling_development",
+      "cycles_median": 16113975.0,
+      "target_cycle_samples": [
+        16146525,
+        16081425
+      ],
+      "retired_instruction_samples": [
+        1452446,
+        1452446
+      ],
+      "useful_MACs": 16777216,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m32_n2048_k256",
+      "m": 32,
+      "n": 2048,
+      "k": 256,
+      "variant": "VME_baseline_k4_serial",
+      "role": "scheduling_development",
+      "cycles_median": 7798219.5,
+      "target_cycle_samples": [
+        7797927,
+        7798512
+      ],
+      "retired_instruction_samples": [
+        151939,
+        151939
+      ],
+      "useful_MACs": 16777216,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m32_n2048_k256",
+      "m": 32,
+      "n": 2048,
+      "k": 256,
+      "variant": "VME_full2x2_k4_dual",
+      "role": "scheduling_development",
+      "cycles_median": 7774097.0,
+      "target_cycle_samples": [
+        7769852,
+        7778342
+      ],
+      "retired_instruction_samples": [
+        151971,
+        151971
+      ],
+      "useful_MACs": 16777216,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m32_n2048_k256",
+      "m": 32,
+      "n": 2048,
+      "k": 256,
+      "variant": "VME_partial1x2_k4_dual",
+      "role": "scheduling_development",
+      "cycles_median": 6246196.0,
+      "target_cycle_samples": [
+        6257495,
+        6234897
+      ],
+      "retired_instruction_samples": [
+        103495,
+        103495
+      ],
+      "useful_MACs": 16777216,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m8_n256_k256",
+      "m": 8,
+      "n": 256,
+      "k": 256,
+      "variant": "RVV_I8_clean",
+      "role": "scheduling_development",
+      "cycles_median": 611137.0,
+      "target_cycle_samples": [
+        612352,
+        609922
+      ],
+      "retired_instruction_samples": [
+        45458,
+        45458
+      ],
+      "useful_MACs": 524288,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m8_n256_k256",
+      "m": 8,
+      "n": 256,
+      "k": 256,
+      "variant": "VME_baseline_k4_serial",
+      "role": "scheduling_development",
+      "cycles_median": 546873.0,
+      "target_cycle_samples": [
+        546002,
+        547744
+      ],
+      "retired_instruction_samples": [
+        17979,
+        17979
+      ],
+      "useful_MACs": 524288,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m8_n256_k256",
+      "m": 8,
+      "n": 256,
+      "k": 256,
+      "variant": "VME_full2x2_k4_dual",
+      "role": "scheduling_development",
+      "cycles_median": 546852.0,
+      "target_cycle_samples": [
+        546622,
+        547082
+      ],
+      "retired_instruction_samples": [
+        17983,
+        17983
+      ],
+      "useful_MACs": 524288,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m8_n256_k256",
+      "m": 8,
+      "n": 256,
+      "k": 256,
+      "variant": "VME_partial1x2_k4_dual",
+      "role": "scheduling_development",
+      "cycles_median": 577399.5,
+      "target_cycle_samples": [
+        579222,
+        575577
+      ],
+      "retired_instruction_samples": [
+        12067,
+        12067
+      ],
+      "useful_MACs": 524288,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m16_n256_k256",
+      "m": 16,
+      "n": 256,
+      "k": 256,
+      "variant": "RVV_I8_clean",
+      "role": "scheduling_development",
+      "cycles_median": 793376.0,
+      "target_cycle_samples": [
+        792652,
+        794100
+      ],
+      "retired_instruction_samples": [
+        90842,
+        90842
+      ],
+      "useful_MACs": 1048576,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m16_n256_k256",
+      "m": 16,
+      "n": 256,
+      "k": 256,
+      "variant": "VME_baseline_k4_serial",
+      "role": "scheduling_development",
+      "cycles_median": 619106.0,
+      "target_cycle_samples": [
+        619450,
+        618762
+      ],
+      "retired_instruction_samples": [
+        18363,
+        18363
+      ],
+      "useful_MACs": 1048576,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m16_n256_k256",
+      "m": 16,
+      "n": 256,
+      "k": 256,
+      "variant": "VME_full2x2_k4_dual",
+      "role": "scheduling_development",
+      "cycles_median": 621787.0,
+      "target_cycle_samples": [
+        621567,
+        622007
+      ],
+      "retired_instruction_samples": [
+        18367,
+        18367
+      ],
+      "useful_MACs": 1048576,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m16_n256_k256",
+      "m": 16,
+      "n": 256,
+      "k": 256,
+      "variant": "VME_partial1x2_k4_dual",
+      "role": "scheduling_development",
+      "cycles_median": 645207.0,
+      "target_cycle_samples": [
+        647482,
+        642932
+      ],
+      "retired_instruction_samples": [
+        12387,
+        12387
+      ],
+      "useful_MACs": 1048576,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m64_n256_k64",
+      "m": 64,
+      "n": 256,
+      "k": 64,
+      "variant": "RVV_I8_clean",
+      "role": "scheduling_development",
+      "cycles_median": 672494.5,
+      "target_cycle_samples": [
+        672012,
+        672977
+      ],
+      "retired_instruction_samples": [
+        92810,
+        92810
+      ],
+      "useful_MACs": 1048576,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m64_n256_k64",
+      "m": 64,
+      "n": 256,
+      "k": 64,
+      "variant": "VME_baseline_k4_serial",
+      "role": "scheduling_development",
+      "cycles_median": 608732.0,
+      "target_cycle_samples": [
+        611697,
+        605767
+      ],
+      "retired_instruction_samples": [
+        5700,
+        5700
+      ],
+      "useful_MACs": 1048576,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m64_n256_k64",
+      "m": 64,
+      "n": 256,
+      "k": 64,
+      "variant": "VME_full2x2_k4_dual",
+      "role": "scheduling_development",
+      "cycles_median": 608994.5,
+      "target_cycle_samples": [
+        609347,
+        608642
+      ],
+      "retired_instruction_samples": [
+        5440,
+        5440
+      ],
+      "useful_MACs": 1048576,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m64_n256_k64",
+      "m": 64,
+      "n": 256,
+      "k": 64,
+      "variant": "VME_partial1x2_k4_dual",
+      "role": "scheduling_development",
+      "cycles_median": 608982.0,
+      "target_cycle_samples": [
+        607722,
+        610242
+      ],
+      "retired_instruction_samples": [
+        5607,
+        5607
+      ],
+      "useful_MACs": 1048576,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m64_n256_k256",
+      "m": 64,
+      "n": 256,
+      "k": 256,
+      "variant": "RVV_I8_clean",
+      "role": "scheduling_development",
+      "cycles_median": 3021506.0,
+      "target_cycle_samples": [
+        3022675,
+        3020337
+      ],
+      "retired_instruction_samples": [
+        363146,
+        363146
+      ],
+      "useful_MACs": 4194304,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m64_n256_k256",
+      "m": 64,
+      "n": 256,
+      "k": 256,
+      "variant": "VME_baseline_k4_serial",
+      "role": "scheduling_development",
+      "cycles_median": 1061689.5,
+      "target_cycle_samples": [
+        1064552,
+        1058827
+      ],
+      "retired_instruction_samples": [
+        12996,
+        12996
+      ],
+      "useful_MACs": 4194304,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m64_n256_k256",
+      "m": 64,
+      "n": 256,
+      "k": 256,
+      "variant": "VME_full2x2_k4_dual",
+      "role": "scheduling_development",
+      "cycles_median": 1057609.5,
+      "target_cycle_samples": [
+        1058092,
+        1057127
+      ],
+      "retired_instruction_samples": [
+        12736,
+        12736
+      ],
+      "useful_MACs": 4194304,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m64_n256_k256",
+      "m": 64,
+      "n": 256,
+      "k": 256,
+      "variant": "VME_partial1x2_k4_dual",
+      "role": "scheduling_development",
+      "cycles_median": 1058912.0,
+      "target_cycle_samples": [
+        1057427,
+        1060397
+      ],
+      "retired_instruction_samples": [
+        12903,
+        12903
+      ],
+      "useful_MACs": 4194304,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m64_n2048_k256",
+      "m": 64,
+      "n": 2048,
+      "k": 256,
+      "variant": "RVV_I8_clean",
+      "role": "scheduling_development",
+      "cycles_median": 35527578.5,
+      "target_cycle_samples": [
+        35493307,
+        35561850
+      ],
+      "retired_instruction_samples": [
+        2904734,
+        2904734
+      ],
+      "useful_MACs": 33554432,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m64_n2048_k256",
+      "m": 64,
+      "n": 2048,
+      "k": 256,
+      "variant": "VME_baseline_k4_serial",
+      "role": "scheduling_development",
+      "cycles_median": 8122509.5,
+      "target_cycle_samples": [
+        8131637,
+        8113382
+      ],
+      "retired_instruction_samples": [
+        102820,
+        102820
+      ],
+      "useful_MACs": 33554432,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m64_n2048_k256",
+      "m": 64,
+      "n": 2048,
+      "k": 256,
+      "variant": "VME_full2x2_k4_dual",
+      "role": "scheduling_development",
+      "cycles_median": 8139232.5,
+      "target_cycle_samples": [
+        8127705,
+        8150760
+      ],
+      "retired_instruction_samples": [
+        100740,
+        100740
+      ],
+      "useful_MACs": 33554432,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m64_n2048_k256",
+      "m": 64,
+      "n": 2048,
+      "k": 256,
+      "variant": "VME_partial1x2_k4_dual",
+      "role": "scheduling_development",
+      "cycles_median": 8134968.0,
+      "target_cycle_samples": [
+        8115576,
+        8154360
+      ],
+      "retired_instruction_samples": [
+        102111,
+        102111
+      ],
+      "useful_MACs": 33554432,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m32_n9216_k2304",
+      "m": 32,
+      "n": 9216,
+      "k": 2304,
+      "variant": "RVV_I8_clean",
+      "role": "scheduling_development",
+      "cycles_median": 2532355837.0,
+      "target_cycle_samples": [
+        2532244827,
+        2532466847
+      ],
+      "retired_instruction_samples": [
+        58440303,
+        58440303
+      ],
+      "useful_MACs": 679477248,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m32_n9216_k2304",
+      "m": 32,
+      "n": 9216,
+      "k": 2304,
+      "variant": "VME_baseline_k4_serial",
+      "role": "scheduling_development",
+      "cycles_median": 320902710.0,
+      "target_cycle_samples": [
+        320908395,
+        320897025
+      ],
+      "retired_instruction_samples": [
+        5549207,
+        5549207
+      ],
+      "useful_MACs": 679477248,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m32_n9216_k2304",
+      "m": 32,
+      "n": 9216,
+      "k": 2304,
+      "variant": "VME_full2x2_k4_dual",
+      "role": "scheduling_development",
+      "cycles_median": 320891432.5,
+      "target_cycle_samples": [
+        320956635,
+        320826230
+      ],
+      "retired_instruction_samples": [
+        5549351,
+        5549351
+      ],
+      "useful_MACs": 679477248,
+      "independent_output_validation_passed": true
+    },
+    {
+      "case": "sched_m32_n9216_k2304",
+      "m": 32,
+      "n": 9216,
+      "k": 2304,
+      "variant": "VME_partial1x2_k4_dual",
+      "role": "scheduling_development",
+      "cycles_median": 180030197.0,
+      "target_cycle_samples": [
+        179961407,
+        180098987
+      ],
+      "retired_instruction_samples": [
+        3783129,
+        3783129
+      ],
+      "useful_MACs": 679477248,
+      "independent_output_validation_passed": true
+    }
+  ],
+  "package_kernel": {
+    "function": "vme_gemm_1x2_reuse",
+    "source_sha256": "8d0eb0f4da4c8cb9c17309df9c8d5791db5f99e7c0a3371a51d2dfde4181fec1",
+    "native_guarded_ELF_sha256": "4bcece00c31c4c4259b58b95d89687d16a0337347e29c75410df7472f08cec18",
+    "native_guarded_gate_sha256": "b06a84f0707ea6cf0f7fa6997ed461952f24361674e200a6e64af58cb4dd8e5c",
+    "native_guarded_allword_regions": 32,
+    "native_guarded_individual_words": 74928,
+    "exact_package_binary_hardware_timing_verified": false
+  },
+  "qualification": [
+    "Hardware rows measure prototype kernels in a matched single-ELF fixture, not full compiled models.",
+    "The package kernel adds geometry/bias/parallel admission; its source/object identity differs from the measured prototype.",
+    "Do not infer unmeasured VLEN, hart, cache state, quantization, wrapper or kernel performance from these observations.",
+    "Full archived-image association with current RTL source is unverified; source pins and dirty patches are declared, not attested to image.",
+    "Physical array busy and causal stall fractions were not measured.",
+    "Fitting/development cases are not independent held-out compiler validation."
+  ],
+  "physical_unit_busy_fraction": null,
+  "timing_model_accuracy_certified": false
+}
