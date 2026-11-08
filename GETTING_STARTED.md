@@ -44,13 +44,28 @@ To change model capture or the RVV backend itself, work in the separate
 [`model2MLIR`](https://github.com/ucb-bar/model2MLIR) or
 [`rvv-mlir`](https://github.com/ucb-bar/rvv-mlir) repository. A new frontend
 commit needs an updated Merlin capture pin before Merlin will use it; a new RVV
-commit requires Iris to recompose against that base and Merlin to update both
-support pins. Neither change is required for a C kernel experiment.
+commit requires Iris to recompose against that base and a matching Merlin
+support-pin selection. Neither change is required for a C kernel experiment.
 To test a local kernel edit without moving Merlin's pin, from the same shell:
 
 ```sh
 export MERLIN_TARGET_PATH="$IRIS_MLIR:$IRIS_MLIR/base/rvv-mlir"
+export MERLIN_SUPPORT_PINS="$IRIS_MLIR/contracts/streaming_support_pins.json"
 ```
+
+This feature revision composes against RVV commit
+`250e93e726f373810776bd5113939e51c4162cad`. Its checked project-local manifest
+selects that exact commit and tree for this explicit Iris checkout. Merlin's
+older global default can remain at its own pin; the manifest does not disable
+verification or change other shells. Both repositories must contain the
+matching dependency before this local selection will work. Ordinary setup
+above still uses Merlin's global package pins until these exports are set.
+
+Dependency selection does not enable streaming. The separate
+[streaming INT8 im2col guide](docs/STREAMING_IM2COL.md) shows its opt-in selector,
+explicit workspace budget, one-compute-hart restriction and numerical gates.
+Its recorded compiler/native checks establish functionality; hand-written
+kernel FPGA measurements do not establish a speedup for this compiler schedule.
 
 The `run.sh` commands below load Merlin's `.env`. If `preflight` marks a
 setting `!`, an old shell export is overriding `.env`; unset that variable.
