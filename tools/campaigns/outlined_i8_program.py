@@ -51,6 +51,30 @@ def positive(value: str) -> int:
     return result
 
 
+def module_origins(root: Path):
+    """Refuse cached provider modules from another checkout; never reload them."""
+    roots = {
+        "iris": root.resolve() / "src/iris",
+        "rvv": root.resolve() / "base/rvv-mlir/src/rvv",
+    }
+    observed = {}
+    for name, module in tuple(sys.modules.items()):
+        family = name.split(".", 1)[0]
+        if family not in roots:
+            continue
+        allowed = roots[family]
+        file = getattr(module, "__file__", None)
+        paths = list(getattr(module, "__path__", ()))
+        candidates = ([file] if file else []) + paths
+        if not candidates:
+            raise ValueError("provider module has unknown origin: " + name)
+        resolved = [Path(value).resolve(strict=True) for value in candidates]
+        if not all(path.is_relative_to(allowed) for path in resolved):
+            raise ValueError("provider module from foreign checkout: " + name)
+        observed[name] = [str(path) for path in resolved]
+    return observed
+
+
 def build(args):
     """Delegate source proof, provider preparation and orchestration to their owners."""
     if args.route not in ("rvv", "vme"):
@@ -61,6 +85,7 @@ def build(args):
         raise ValueError("C-safe prefix required")
     if args.output.exists():
         raise ValueError("output must be a fresh directory")
+    module_origins(ROOT)
     with scoped_support(ROOT) as pins:
         from merlin.common.paths import runtime_dir
         from merlin.compile.outlined_program import build_outlined_program
@@ -75,13 +100,14 @@ def build(args):
 
         from iris import backend
 
+        module_origins(ROOT)
         composition = validate_backend_composition(ROOT)
         source = args.source.resolve()
         module = parse_mlir_text(source.read_text())
         roles = StagedRoles((0, 1, 2), 2, 2, 2, 2, (0, 1), (0, 1))
         plan = plan_deployable_chain(
             module,
-            worker_slots=(0, 1),
+            worker_slots=tuple(args.worker_slots),
             worker_count=2,
             workspace_budget_bytes=args.workspace_budget_bytes,
             alignment_bytes=64,
@@ -136,7 +162,7 @@ def build(args):
                 source,
                 output / "chain",
                 roles=roles,
-                worker_slots=(0, 1),
+                worker_slots=tuple(args.worker_slots),
                 workspace_budget_bytes=args.workspace_budget_bytes,
                 alignment_bytes=64,
                 compute_cflags=compute_flags,
@@ -148,6 +174,9 @@ def build(args):
                 "status": "built_linkable_not_execution_admitted",
                 "route": args.route,
                 "selected_dispatch": args.dispatch_index,
+                "ordinary_dispatch_worker_slots": list(args.worker_slots),
+                "prepared_selected_worker_slots": list(prepared.worker_slots),
+                "provider_module_origins": module_origins(ROOT),
                 "source": str(source),
                 "source_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
                 "composition": asdict(composition),
@@ -192,6 +221,9 @@ def parser():
     result.add_argument("--output", type=Path, required=True)
     result.add_argument("--route", choices=("rvv", "vme"), required=True)
     result.add_argument("--dispatch-index", type=int, required=True)
+    result.add_argument(
+        "--worker-slots", type=int, choices=(0, 1), nargs="+", required=True
+    )
     result.add_argument("--unit", required=True)
     result.add_argument("--config", required=True)
     result.add_argument("--workspace-budget-bytes", type=positive, required=True)

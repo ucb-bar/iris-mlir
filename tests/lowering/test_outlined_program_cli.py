@@ -4,6 +4,7 @@ import importlib.util
 import os
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -54,6 +55,9 @@ def test_existing_output_is_never_modified(tmp_path):
             str(output),
             "--route",
             "vme",
+            "--worker-slots",
+            "0",
+            "1",
             "--dispatch-index",
             "0",
             "--unit",
@@ -72,20 +76,36 @@ def test_existing_output_is_never_modified(tmp_path):
     assert sorted(p.name for p in output.iterdir()) == ["keep"]
 
 
-@pytest.mark.parametrize("route", ["vme", "rvv"])
-def test_actual_public_example_builds_linkable_chain(tmp_path, route):
-    from merlin.llvmlower import toolchain
+def authored_source(operations):
+    text = (ROOT / "examples/outlined_i8_chain.mlir").read_text()
+    start, end = text.index("    %bias_empty"), text.index("    func.return")
+    if operations == 1:
+        return (
+            text[:start].replace(", %bias:tensor<65xi32>", "")
+            + "    func.return %result:tensor<3x65xi32>\n  }\n}\n"
+        )
+    if operations == 3:
+        second = (
+            text[start:end]
+            .replace("%bias_empty", "%second_empty")
+            .replace("%final", "%second")
+            .replace("%result", "%final")
+        )
+        return text[:end] + second + text[end:].replace("%final", "%second")
+    return text
 
-    if not os.environ.get("MERLIN_CHIPYARD_IRIS") or not toolchain.available():
-        pytest.skip("explicit pinned RTL and compiler installation required")
-    args = CLI.parser().parse_args(
+
+def arguments(source, output, route="vme", slots=(0, 1)):
+    return CLI.parser().parse_args(
         [
             "--source",
-            str(ROOT / "examples/outlined_i8_chain.mlir"),
+            str(source),
             "--output",
-            str(tmp_path / route),
+            str(output),
             "--route",
             route,
+            "--worker-slots",
+            *map(str, slots),
             "--dispatch-index",
             "0",
             "--unit",
@@ -100,9 +120,24 @@ def test_actual_public_example_builds_linkable_chain(tmp_path, route):
             "public_chain_" + route,
         ]
     )
-    report = CLI.build(args)
+
+
+@pytest.mark.parametrize("route", ["vme", "rvv"])
+@pytest.mark.parametrize("operations", [1, 2, 3])
+def test_actual_public_example_builds_linkable_chain(tmp_path, route, operations):
+    from merlin.llvmlower import toolchain
+
+    if not os.environ.get("MERLIN_CHIPYARD_IRIS") or not toolchain.available():
+        pytest.skip("explicit pinned RTL and compiler installation required")
+    source = tmp_path / "source.mlir"
+    source.write_text(authored_source(operations))
+    slots = tuple(index % 2 for index in range(operations))
+    report = CLI.build(arguments(source, tmp_path / route, route, slots))
     assert report["status"] == "built_linkable_not_execution_admitted"
     assert report["route"] == route
+    assert report["ordinary_dispatch_worker_slots"] == list(slots)
+    assert report["prepared_selected_worker_slots"] == [0, 1]
+    assert report["provider_module_origins"]
     assert report["provider"]["source_ir_sha256"]
     assert report["provider"]["provenance"]["controller_packing"] == "scalar_common_ISA"
     assert report["workspace_bytes"] <= report["workspace_budget_bytes"]
@@ -114,6 +149,32 @@ def test_actual_public_example_builds_linkable_chain(tmp_path, route):
     )
     assert Path(report["chain_build"]).is_file()
     assert not any(p.suffix == ".elf" for p in (tmp_path / route).rglob("*"))
+
+
+@pytest.mark.parametrize("slots", [(0,), (0, 1, 0)])
+def test_wrong_dispatch_assignment_count_refuses_before_output(tmp_path, slots):
+    output = tmp_path / "refused"
+    with pytest.raises(ValueError):
+        CLI.build(
+            arguments(ROOT / "examples/outlined_i8_chain.mlir", output, slots=slots)
+        )
+    assert not output.exists()
+
+
+@pytest.mark.parametrize("family", ["iris", "rvv"])
+def test_cached_foreign_provider_refuses_without_module_replacement(
+    tmp_path, monkeypatch, family
+):
+    foreign = tmp_path / "foreign.py"
+    foreign.write_text("# different checkout\n")
+    loaded = SimpleNamespace(__file__=str(foreign))
+    name = family + ".foreign"
+    monkeypatch.setitem(sys.modules, name, loaded)
+    output = tmp_path / "refused"
+    with pytest.raises(ValueError, match="foreign checkout"):
+        CLI.build(arguments(ROOT / "examples/outlined_i8_chain.mlir", output))
+    assert not output.exists()
+    assert sys.modules[name] is loaded
 
 
 @pytest.mark.parametrize("refusal", ["missing_dispatch", "unsigned_source"])
@@ -132,6 +193,9 @@ def test_source_or_selection_refuses_before_output_creation(tmp_path, refusal):
             str(output),
             "--route",
             "vme",
+            "--worker-slots",
+            "0",
+            "1",
             "--dispatch-index",
             "99" if refusal == "missing_dispatch" else "0",
             "--unit",
@@ -147,3 +211,13 @@ def test_source_or_selection_refuses_before_output_creation(tmp_path, refusal):
     with pytest.raises(ValueError):
         CLI.build(args)
     assert not output.exists()
+
+
+def test_package_search_path_from_foreign_checkout_refuses(tmp_path, monkeypatch):
+    loaded = SimpleNamespace(
+        __file__=str(ROOT / "src/iris/__init__.py"), __path__=[str(tmp_path)]
+    )
+    monkeypatch.setitem(sys.modules, "iris.shadow", loaded)
+    with pytest.raises(ValueError, match="foreign checkout"):
+        CLI.module_origins(ROOT)
+    assert sys.modules["iris.shadow"] is loaded

@@ -18,16 +18,24 @@ wrapping-I32 bias addition. Build both routes from the exact same source:
 ```sh
 python tools/campaigns/outlined_i8_program.py \
   --source examples/outlined_i8_chain.mlir --output out/outlined-vme \
-  --route vme --dispatch-index 0 --unit saturn_vme --config IrisConfig \
+  --route vme --dispatch-index 0 --worker-slots 0 1 --unit saturn_vme --config IrisConfig \
   --workspace-budget-bytes 65536 --descriptor-job-budget 64 \
   --prefix example_vme
 
 python tools/campaigns/outlined_i8_program.py \
   --source examples/outlined_i8_chain.mlir --output out/outlined-rvv \
-  --route rvv --dispatch-index 0 --unit saturn_vme --config IrisConfig \
+  --route rvv --dispatch-index 0 --worker-slots 0 1 --unit saturn_vme --config IrisConfig \
   --workspace-budget-bytes 65536 --descriptor-job-budget 64 \
   --prefix example_rvv
 ```
+
+`--worker-slots` requires exactly one slot for every arithmetic dispatch in the
+closed graph. Slots are indices 0 and 1 into the pinned compute workers. These
+assign ordinary callbacks; the selected split GEMM still runs in parallel on
+both prepared worker slots. A one-operation graph needs one entry, and a
+three-operation graph needs three. Wrong counts refuse before creating output.
+Cached Iris or RVV modules from another checkout also refuse; the command does
+not remove or reload caller modules.
 
 Outputs must be fresh directories. The workspace and descriptor budgets are
 explicit example limits, not target cache-capacity facts or universal tuning
