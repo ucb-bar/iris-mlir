@@ -38,12 +38,22 @@ def selector(tile_edge):
 
 
 def streaming_selector(
-    *, unit, config, workspace_bytes, vlen_bits, panel_rows=None, select=None
+    *,
+    unit,
+    config,
+    workspace_bytes,
+    vlen_bits,
+    panel_rows=None,
+    select=None,
+    prepacked_a=False,
+    admission="always",
 ):
     """Opt in to bounded signed-I8 window panels using the selected RTL facts.
 
     Pass this callable as ``MatrixRouting.select``. The explicit VLEN is checked
     against the unit; DLEN is read independently. No cache size is inferred.
+    ``prepacked_a=True`` produces the primitive's K-major A directly;
+    ``admission='workspace_pressure'`` adds a static preference/work proxy.
     """
     from .transforms.streaming import StreamingOptions, StreamingSelector
 
@@ -60,6 +70,8 @@ def streaming_selector(
         tile_edge=edge,
         workspace_bytes=workspace_bytes,
         panel_rows=panel_rows,
+        prepacked_a=prepacked_a,
+        admission=admission,
     )
     return StreamingSelector(select if select is not None else selector(edge), options)
 
@@ -98,6 +110,8 @@ def build_object(
         parallel_tiles=parallel_tiles,
     )
     extra = {} if kernel is None else {"kernel": kernel}
+    if schedule and schedule["schedule"].get("prepacked_signatures"):
+        extra["prepacked_signatures"] = schedule["schedule"]["prepacked_signatures"]
     built = vme_shim.build_object(
         signatures,
         work,

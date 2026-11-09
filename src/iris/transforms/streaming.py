@@ -16,8 +16,8 @@ from pathlib import Path
 class StreamingOptions:
     """Software budgets plus independently derived architectural facts.
 
-    ``workspace_bytes`` covers the logical payload of two possible gather panels AND the shim's
-    reusable A-transpose buffer. It is not an assertion about cache capacity.
+    ``workspace_bytes`` covers two gather-panel payloads and, unless prepacked,
+    the shim's reusable A-transpose buffer. It is not a cache-capacity assertion.
     ``panel_rows`` is an optional upper bound, never a universal measured tile.
     """
 
@@ -28,6 +28,8 @@ class StreamingOptions:
     tile_edge: int
     workspace_bytes: int
     panel_rows: int | None = None
+    prepacked_a: bool = False
+    admission: str = "always"
 
     def __post_init__(self):
         if not self.unit or not self.config:
@@ -40,17 +42,63 @@ class StreamingOptions:
             self.panel_rows is not None and self.panel_rows <= 0
         ):
             raise ValueError("positive explicit software budgets required")
+        if type(self.prepacked_a) is not bool or self.admission not in (
+            "always",
+            "workspace_pressure",
+        ):
+            raise ValueError(
+                "explicit prepacked-A bool and supported admission policy required"
+            )
 
     def width(self, *, k: int, ow: int) -> int:
-        # Full-panel + tail lifetimes may overlap; the descriptor shim also
-        # reserves one packed A. Reserve all three, even when a tail is absent.
-        capacity = self.workspace_bytes // (3 * k)
+        # Full-panel + tail lifetimes may overlap. The legacy descriptor shim
+        # also packs A; the direct K-major entry needs no additional A buffer.
+        capacity = self.workspace_bytes // ((2 if self.prepacked_a else 3) * k)
         width = min(capacity, ow, self.panel_rows or ow)
         if width < 1:
             raise ValueError("workspace cannot hold gather/tail/packed-A for one row")
         if width >= self.tile_edge:
             width = width // self.tile_edge * self.tile_edge
         return width
+
+    def admit(self, *, spec, n, width):
+        """A static work/workspace proxy, never an empirical latency estimate."""
+
+        def ceil_tiles(value):
+            return (value + self.tile_edge - 1) // self.tile_edge
+
+        full_tiles = ceil_tiles(spec.m) * ceil_tiles(n)
+        full, tail = divmod(spec.ow, width)
+        panel_tiles = (
+            spec.n
+            * spec.oh
+            * (full * ceil_tiles(width) + ceil_tiles(tail))
+            * ceil_tiles(n)
+        )
+        whole_payload = 2 * spec.m * spec.k
+        admitted, reason = True, "explicit_always_policy"
+        if self.admission == "workspace_pressure":
+            if whole_payload <= self.workspace_bytes:
+                admitted, reason = False, "full_gather_and_pack_fit_preferred_workspace"
+            elif panel_tiles > full_tiles:
+                admitted, reason = False, "row_panels_increase_abstract_tile_count"
+            elif width < self.tile_edge:
+                admitted, reason = False, "panel_has_fewer_rows_than_RTL_tile_edge"
+            else:
+                reason = "workspace_pressure_without_extra_abstract_tiles"
+        return {
+            "admitted": admitted,
+            "reason": reason,
+            "basis": "static_cost_proxy_not_measured_latency",
+            "full_gather_plus_pack_payload_bytes": whole_payload,
+            "preferred_workspace_bytes": self.workspace_bytes,
+            "full_abstract_TE_tiles": full_tiles,
+            "stream_abstract_TE_tiles": panel_tiles,
+            "full_descriptor_calls": 1,
+            "stream_descriptor_calls": spec.n * spec.oh * (full + bool(tail)),
+            "physical_busy_fraction": None,
+            "hardware_latency_estimate": None,
+        }
 
     def to_dict(self):
         return {
@@ -213,7 +261,7 @@ def _window_spec(nf, shared):
     )
 
 
-def _declare_destination_wrapper(module, symbol, signature):
+def _declare_destination_wrapper(module, symbol, signature, *, prepacked_a=False):
     """Expose the existing C ABI through an explicit mutable buffer boundary.
 
     A bodyless *tensor* function may return an alias of ANY tensor argument in
@@ -235,6 +283,11 @@ def _declare_destination_wrapper(module, symbol, signature):
     from xdsl.ir import Block, Region
 
     tensors = ic._signature_types(module, signature)
+    if prepacked_a:
+        from xdsl.dialects.builtin import TensorType
+
+        m, _n, k = signature
+        tensors = (TensorType(tensors[0].get_element_type(), [k, m]), *tensors[1:])
     buffers = tuple(MemRefType(t.get_element_type(), t.get_shape()) for t in tensors)
     block = Block(arg_types=tensors)
     views = [
@@ -281,7 +334,7 @@ def rewrite(module, *, select, tile_edge, symbol_prefix):
     if options.tile_edge != tile_edge:
         raise ValueError("streaming and selected VME tile geometry disagree")
     shared = _shared()
-    routed, signatures, entries = [], {}, []
+    routed, signatures, entries, admissions = [], {}, [], []
     # Validate every chosen window before mutating anything. Unsupported windows
     # never silently fall through to an unbounded full-im2col route.
     chosen = []
@@ -316,6 +369,10 @@ def rewrite(module, *, select, tile_edge, symbol_prefix):
             )
         spec = _window_spec(nf, shared)
         width = options.width(k=spec.k, ow=spec.ow)
+        decision = options.admit(spec=spec, n=nf.size(nf.n), width=width)
+        admissions.append({"window": asdict(spec), "panel_width": width, **decision})
+        if not decision["admitted"]:
+            continue
         chosen.append((nf, spec, width))
     for index, (nf, spec, width) in enumerate(chosen):
         source = nf.op.operands[0]
@@ -350,7 +407,13 @@ def rewrite(module, *, select, tile_edge, symbol_prefix):
             return [inner], inner.results[0]
 
         ops, result = shared.build_stream(
-            source, initial, spec, width, consume, panel_layout="mk", output_axis=0
+            source,
+            initial,
+            spec,
+            width,
+            consume,
+            panel_layout="km" if options.prepacked_a else "mk",
+            output_axis=0,
         )
         Rewriter.insert_op(ops, InsertPoint.before(call))
         call.results[0].replace_all_uses_with(result)
@@ -386,7 +449,7 @@ def rewrite(module, *, select, tile_edge, symbol_prefix):
                 )
             )
         gather_bytes = spec.k * (width + tail)
-        packed_bytes = spec.k * max(width, tail)
+        packed_bytes = 0 if options.prepacked_a else spec.k * max(width, tail)
         entries.append(
             {
                 "source_contraction": index,
@@ -399,12 +462,15 @@ def rewrite(module, *, select, tile_edge, symbol_prefix):
                 "gather_workspace_bytes": gather_bytes,
                 "shim_packed_A_bytes": packed_bytes,
                 "combined_workspace_bound_bytes": gather_bytes + packed_bytes,
-                "extra_A_to_At_copy": True,
+                "extra_A_to_At_copy": not options.prepacked_a,
+                "A_descriptor_layout": "K_M" if options.prepacked_a else "M_K",
                 "B_normalization": "once_outside_panels",
             }
         )
     for symbol, signature in signatures.items():
-        _declare_destination_wrapper(module, symbol, signature)
+        _declare_destination_wrapper(
+            module, symbol, signature, prepacked_a=options.prepacked_a
+        )
     rest = ic.rewrite_contractions(
         module,
         select=select.base,
@@ -422,6 +488,10 @@ def rewrite(module, *, select, tile_edge, symbol_prefix):
         "options": options.to_dict(),
         "source_contractions": len(chosen),
         "entries": entries,
+        "admission_decisions": admissions,
+        "prepacked_signatures": {s: list(shape) for s, shape in signatures.items()}
+        if options.prepacked_a
+        else {},
         "routing_count_semantics": "declared_logical_panel_invocations_plus_plain_contractions",
     }
 

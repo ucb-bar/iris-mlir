@@ -379,6 +379,30 @@ def _resolved(contract: UnitContract):
     return derived
 
 
+def _prepacked_signatures(signatures, selected):
+    """Validate the layout witness before coercion or source derivation."""
+    if selected is None:
+        return {}
+    if not isinstance(selected, Mapping):
+        raise TypeError("prepacked signatures must be a mapping")
+    out = {}
+    for name, shape in selected.items():
+        if (
+            not isinstance(shape, (list, tuple))
+            or len(shape) != 3
+            or any(type(v) is not int or v <= 0 for v in shape)
+        ):
+            raise ValueError(
+                "prepacked signatures require exactly three positive integers"
+            )
+        if name not in signatures or tuple(signatures[name]) != tuple(shape):
+            raise ValueError(
+                "prepacked-A signatures differ from selected shim signatures"
+            )
+        out[name] = tuple(shape)
+    return out
+
+
 def emit_translation_unit(
     signatures,
     contract: UnitContract,
@@ -386,6 +410,7 @@ def emit_translation_unit(
     alignment_bytes: int,
     scratch_bytes=None,
     kernel=None,
+    prepacked_signatures=None,
 ):
     """Derive, cross-check, emit: the kernel inside Merlin's generic descriptor-ABI shim.
 
@@ -394,6 +419,7 @@ def emit_translation_unit(
     """
     from merlin.kernels import matrix_shim
 
+    prepacked = _prepacked_signatures(signatures, prepacked_signatures)
     derived = _resolved(contract)
     if kernel is None:
         text = vme_kernel.emit_kernel(
@@ -402,14 +428,28 @@ def emit_translation_unit(
         func = vme_kernel.KERNEL_FUNC
     else:
         text, func = kernel.source, kernel.function
+    ordinary = {
+        name: shape for name, shape in signatures.items() if name not in prepacked
+    }
     unit = matrix_shim.emit_translation_unit(
         text,
         func,
-        signatures,
+        ordinary if prepacked else signatures,
         alignment_bytes=alignment_bytes,
         prefix=SHIM_PREFIX,
         scratch_bytes=scratch_bytes,
     )
+    if prepacked:
+        from . import prepacked_shim
+
+        unit = prepacked_shim.emit(
+            text,
+            func,
+            prepacked,
+            prefix=SHIM_PREFIX,
+            alignment_bytes=alignment_bytes,
+            ordinary=unit if ordinary else None,
+        )
     return unit, derived
 
 
@@ -514,6 +554,7 @@ def build_object(
     scratch_bytes: int | None = None,
     contract_path: str | Path | None = None,
     kernel: Any = None,
+    prepacked_signatures=None,
 ) -> VmeBuild:
     """Derive the unit's facts, emit the translation unit, compile it, record what it came from.
 
@@ -523,6 +564,9 @@ def build_object(
     None (the default) is the generated kernel, byte for byte as before.
     """
     from merlin.common import provenance as PROV
+
+    if prepacked_signatures and parallel_tiles:
+        raise ValueError("prepacked streaming currently requires one compute hart")
 
     work = Path(work)
     work.mkdir(parents=True, exist_ok=True)
@@ -567,6 +611,7 @@ def build_object(
         alignment_bytes=alignment,
         scratch_bytes=scratch_bytes,
         kernel=prepared,
+        prepacked_signatures=prepacked_signatures,
     )
     src = work / "merlin_vme_shim.c"
     src.write_text(str(unit_src), encoding="utf-8")
