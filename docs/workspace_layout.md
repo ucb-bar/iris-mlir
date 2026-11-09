@@ -48,9 +48,30 @@ from compute measurements.
 
 The default compiler/provider path and existing board files remain unchanged.
 
-The emitted custom linker script preserves the selected SDK script except for
+In the default loader-visible mode, the custom linker script preserves the selected SDK script except for
 its build-only `IDT_LIST` memory-region origin. A large DRAM workspace may cross
 the SDK's usual ISR-table scratch address. The tool places that scratch just
 below declared DRAM; the final executable must discard `.intList` and contain
 no load segment at that address. Unknown metadata-region syntax refuses. This
 is a linker build resource, not another runtime or physical memory allocation.
+
+`--loader-excluded` is a separate explicit choice. It adds `:NONE` to the one
+NOLOAD workspace reservation, retaining its ELF ALLOC/NOBITS section and full
+software ownership while omitting it from PT_LOAD. It does not initialize RAM.
+Before use, the controller must initialize every byte that any worker may read;
+complete joins are required before reuse. The default remains loader-visible.
+
+After linking, run `WorkspaceLayout.validate_elf(path)` using the SDK Python with
+`pyelftools`, or pass `--validate-elf` with the same generation arguments and a
+fresh output directory. Validation checks every allocated section and every load
+segment. Only the exact declared, writable, non-executable NOBITS workspace may
+lack LOAD coverage when exclusion was requested. Other unmapped code/data,
+misplaced boot anchors, leftover ISR build metadata, altered workspace bounds
+and overlapping loader segments refuse. This is a software map gate, separate
+from complete numerical, initialization, physical-image and capacity evidence.
+
+Loader exclusion requires identity-mapped non-XIP RAM. Its custom linker adds
+explicit low-RAM LOAD and non-executable-stack program headers, routing ordinary
+SDK sections into LOAD while reserving only the workspace with `:NONE`. GNU ld's
+automatic program-header generation may otherwise still create a LOAD segment
+for a section marked `:NONE`; the mandatory final-ELF check catches that case.

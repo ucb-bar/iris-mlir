@@ -201,3 +201,141 @@ def test_unknown_linker_metadata_contract_declines(tmp_path, text):
     with pytest.raises(ValueError):
         layout().write(tmp_path / "refuse", linker_source=source)
     assert not (tmp_path / "refuse").exists()
+
+
+def test_explicit_loader_exclusion_is_default_off():
+    assert ":NONE" not in layout().linker()
+    p = layout(loader_visible=False)
+    assert " :NONE" in p.linker()
+    assert p.record()["loader_visible"] is False
+    with pytest.raises(TypeError):
+        layout(loader_visible=1)
+
+
+def _actual_elf(variable):
+    import os
+
+    value = os.environ.get(variable)
+    if not value:
+        pytest.skip("explicit actual Zephyr ELF fixture required")
+    return Path(value)
+
+
+def test_actual_visible_elf_map():
+    elf = _actual_elf("IRIS_TEST_VISIBLE_ELF")
+    r = layout().validate_elf(elf)
+    assert r["pass"] and r["only_exempted_ALLOC_sections"] == []
+    assert r["loader_zero_fill_bytes"] >= 2560 << 20
+    with pytest.raises(ValueError, match="intersects a LOAD"):
+        layout(loader_visible=False).validate_elf(elf)
+
+
+def test_actual_excluded_elf_map():
+    elf = _actual_elf("IRIS_TEST_EXCLUDED_ELF")
+    r = layout(loader_visible=False).validate_elf(elf)
+    assert r["pass"]
+    assert r["only_exempted_ALLOC_sections"] == [".iris_model_workspace"]
+    assert r["loader_zero_fill_bytes"] < 1536 << 20
+    with pytest.raises(ValueError, match="coverage differs"):
+        layout().validate_elf(elf)
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "unmapped_alloc",
+        "extra_unmapped_nobits",
+        "workspace_size",
+        "workspace_exec",
+        "workspace_progbits",
+        "workspace_tls",
+    ],
+)
+def test_only_exact_declared_nobits_may_be_unmapped(tmp_path, mutation):
+    import struct
+
+    source = _actual_elf("IRIS_TEST_EXCLUDED_ELF")
+
+    from elftools.elf.elffile import ELFFile
+
+    raw = bytearray(source.read_bytes())
+    with source.open("rb") as h:
+        elf = ELFFile(h)
+        name = (
+            ".comment"
+            if mutation.startswith(("unmapped", "extra"))
+            else ".iris_model_workspace"
+        )
+        index = next(
+            i for i, section in enumerate(elf.iter_sections()) if section.name == name
+        )
+        offset = int(elf["e_shoff"]) + index * int(elf["e_shentsize"])
+    fields = list(struct.unpack_from("<IIQQQQIIQQ", raw, offset))
+    if mutation in {"unmapped_alloc", "extra_unmapped_nobits"}:
+        fields[2] |= 2
+        fields[3] = 0x90000000
+        if mutation == "extra_unmapped_nobits":
+            fields[1], fields[3] = 8, 0xE0000040
+    elif mutation == "workspace_size":
+        fields[5] -= 64
+    elif mutation == "workspace_exec":
+        fields[2] |= 4
+    elif mutation == "workspace_tls":
+        fields[2] |= 0x400
+    else:
+        fields[1] = 1
+    struct.pack_into("<IIQQQQIIQQ", raw, offset, *fields)
+    bad = tmp_path / (mutation + ".elf")
+    bad.write_bytes(raw)
+    with pytest.raises(ValueError):
+        layout(loader_visible=False).validate_elf(bad)
+
+
+@pytest.mark.parametrize(
+    "bad", [[], (("relative", "0" * 64),), (("/absolute", "bad"),)]
+)
+def test_source_bindings_are_immutable_and_exact(bad):
+    with pytest.raises(ValueError):
+        DeclaredDram(0x80000000, 4 << 30, "/memory@80000000", bad)
+
+
+@pytest.mark.parametrize(
+    "mutation", ["file_span", "write_permissions", "read_permissions", "boot_anchor"]
+)
+def test_malformed_actual_load_or_boot_anchor_refuses(tmp_path, mutation):
+    import struct
+
+    source = _actual_elf("IRIS_TEST_EXCLUDED_ELF")
+    from elftools.elf.elffile import ELFFile
+
+    raw = bytearray(source.read_bytes())
+    with source.open("rb") as stream:
+        elf = ELFFile(stream)
+        if mutation == "boot_anchor":
+            symbols = elf.get_section_by_name(".symtab")
+            i = next(
+                i
+                for i, symbol in enumerate(symbols.iter_symbols())
+                if symbol.name == "__bss_end"
+            )
+            offset = int(symbols["sh_offset"]) + i * int(symbols["sh_entsize"]) + 8
+            struct.pack_into("<Q", raw, offset, 0xE0000040)
+        else:
+            i = next(
+                i
+                for i, segment in enumerate(elf.iter_segments())
+                if segment["p_type"] == "PT_LOAD"
+            )
+            offset = int(elf["e_phoff"]) + i * int(elf["e_phentsize"])
+            fields = list(struct.unpack_from("<IIQQQQQQ", raw, offset))
+            if mutation == "file_span":
+                fields[2] = len(raw) + 4096
+            elif mutation == "write_permissions":
+                fields[1] &= ~2
+            else:
+                fields[1] &= ~4
+            struct.pack_into("<IIQQQQQQ", raw, offset, *fields)
+    out = tmp_path / (mutation + ".elf")
+    out.write_bytes(raw)
+    with pytest.raises(ValueError):
+        layout(loader_visible=False).validate_elf(out)
