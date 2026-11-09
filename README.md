@@ -1,3 +1,8 @@
+> **Profiling figures (2026-11-08):** [Per-part speedup, latency, lane fill,
+> throughput efficiency, phase costs and roofline view](docs/profiling/20261108/README.md).
+> Includes raw JSON/CSV, provenance and a reproducible PNG/SVG/PDF plotting tool.
+> Model-shaped FPGA operators and full-model functional diagnostics are labeled separately.
+
 # iris-mlir
 
 Merlin support for **Iris** (chipyard `iris-cy`, `IrisConfig`). This repository is a layer on top of
