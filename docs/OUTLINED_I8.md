@@ -30,9 +30,14 @@ python tools/campaigns/outlined_i8_program.py \
 ```
 
 `--worker-slots` requires exactly one slot for every arithmetic dispatch in the
-closed graph. Slots are indices 0 and 1 into the pinned compute workers. These
-assign ordinary callbacks; the selected split GEMM still runs in parallel on
-both prepared worker slots. A one-operation graph needs one entry, and a
+closed graph. Slots index the pinned compute workers. The default roster is
+`--compute-harts 0 1`; the selected split GEMM uses both workers. For a true
+single-compute-hart baseline, use `--compute-harts 0 --worker-slots 0 0` on the
+two-operation example. `--compute-harts 1` similarly maps logical slot 0 to
+physical hart 1. Only selected compute harts have arithmetic callbacks and
+profile tracks; H2 still initializes, packs, dispatches and finishes. Invocation
+slot masks and the matrix kernel's physical-hart masks are bound separately.
+A one-operation graph needs one assignment entry, and a
 three-operation graph needs three. Wrong counts refuse before creating output.
 Cached Iris or RVV modules from another checkout also refuse; the command does
 not remove or reload caller modules.
@@ -84,7 +89,7 @@ PYTHONPATH=src:base/rvv-mlir/src python -m pytest \
   tests/lowering/test_outlined_vme.py tests/lowering/test_outlined_rvv.py
 ```
 
-The two compiler-backed CLI tests require the explicit compiler and pinned RTL
+The compiler-backed tests require the explicit compiler and pinned RTL
 source environment. Missing prerequisites are reported as skips, not passes.
 The script's selected dispatch is explicit and structural: model names, golden
 values and benchmark identities do not choose its behavior.

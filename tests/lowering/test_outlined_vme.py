@@ -3,7 +3,7 @@
 import pytest
 from merlin.frontends.linalg_mlir import parse_mlir_text
 
-from iris.lower.outlined_vme import admit_signed_gemm
+from iris.lower.outlined_vme import admit_signed_gemm, worker_binding
 
 SOURCE = """builtin.module {
 func.func @forward(%a:tensor<3x17xi8>,%b:tensor<17x65xi8>)->tensor<3x65xi32> {
@@ -22,6 +22,68 @@ func.func @forward(%a:tensor<3x17xi8>,%b:tensor<17x65xi8>)->tensor<3x65xi32> {
  func.return %m:tensor<3x65xi32>
 }}
 """
+
+
+@pytest.mark.parametrize(
+    "harts,slots,logical_mask,physical_mask",
+    [
+        ((0,), (0,), 1, 1),
+        ((1,), (0,), 1, 2),
+        ((0, 1), (0,), 1, 1),
+        ((0, 1), (1,), 2, 2),
+        ((0, 1), (0, 1), 3, 3),
+    ],
+)
+def test_worker_slots_are_distinct_from_physical_hart_bits(
+    harts, slots, logical_mask, physical_mask
+):
+    from merlin.runtime.staged_dispatch import StagedRoles
+
+    roles = StagedRoles((0, 1, 2), 2, 2, 2, 2, harts, harts)
+    assert worker_binding(roles, slots) == (harts, logical_mask, physical_mask)
+
+
+@pytest.mark.parametrize(
+    "harts,slots",
+    [
+        ((0,), (1,)),
+        ((1,), (1,)),
+        ((0, 1), (2,)),
+        ((0, 1), (0, 0)),
+        ((0,), (False,)),
+        ((False,), (0,)),
+        ((1, 0), (0,)),
+    ],
+)
+def test_unavailable_duplicate_or_unknown_workers_refuse(harts, slots):
+    from types import SimpleNamespace
+
+    roles = SimpleNamespace(
+        compute_harts=harts,
+        profile_harts=harts,
+        model_init_hart=2,
+        pack_hart=2,
+        dispatch_hart=2,
+        finish_hart=2,
+    )
+    with pytest.raises(ValueError):
+        worker_binding(roles, slots)
+
+
+@pytest.mark.parametrize("profile", [(1,), (2,), (0.0,), (False,)])
+def test_compute_and_profile_rosters_must_match_exactly(profile):
+    from types import SimpleNamespace
+
+    roles = SimpleNamespace(
+        compute_harts=(0,),
+        profile_harts=profile,
+        model_init_hart=2,
+        pack_hart=2,
+        dispatch_hart=2,
+        finish_hart=2,
+    )
+    with pytest.raises(ValueError):
+        worker_binding(roles, (0,))
 
 
 def test_source_proof_derives_shapes_and_preserves_source():

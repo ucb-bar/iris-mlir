@@ -15,6 +15,37 @@ import subprocess
 from pathlib import Path
 
 
+def worker_binding(roles, worker_slots):
+    """Bind logical invocation slots to the selected physical compute harts."""
+    harts = roles.compute_harts
+    if (
+        harts not in ((0,), (1,), (0, 1))
+        or any(type(hart) is not int for hart in harts)
+        or not isinstance(roles.profile_harts, tuple)
+        or any(type(hart) is not int for hart in roles.profile_harts)
+        or roles.profile_harts != harts
+        or any(
+            getattr(roles, key) != 2
+            for key in ("model_init_hart", "pack_hart", "dispatch_hart", "finish_hart")
+        )
+    ):
+        raise ValueError("Iris requires controller2 and compute/profile harts0/1")
+    if (
+        not isinstance(worker_slots, tuple)
+        or not worker_slots
+        or len(set(worker_slots)) != len(worker_slots)
+        or any(
+            type(slot) is not int or not 0 <= slot < len(harts) for slot in worker_slots
+        )
+    ):
+        raise ValueError("explicit nonempty subset of the actual worker slots required")
+    return (
+        harts,
+        sum(1 << slot for slot in worker_slots),
+        sum(1 << harts[slot] for slot in worker_slots),
+    )
+
+
 def admit_signed_gemm(module) -> tuple[int, int, int]:
     """Prove exact zero-seeded wrapping S8×S8→I32 and dense canonical layout."""
     from merlin.kernels.shapes import zero_initialised
@@ -153,26 +184,9 @@ def prepare_staged_kernel(
         raise ValueError(
             "explicit boolean vector-controller experiment selection required"
         )
-    if (
-        roles.compute_harts != (0, 1)
-        or roles.profile_harts != (0, 1)
-        or any(
-            getattr(roles, k) != 2
-            for k in ("model_init_hart", "pack_hart", "dispatch_hart", "finish_hart")
-        )
-    ):
-        raise ValueError(
-            "Iris split requires controller2 and pinned compute/profile harts0/1"
-        )
-    if (
-        not isinstance(worker_slots, tuple)
-        or not worker_slots
-        or len(set(worker_slots)) != len(worker_slots)
-        or any(type(s) is not int or s not in (0, 1) for s in worker_slots)
-    ):
-        raise ValueError("explicit nonempty subset of worker slots0/1 required")
+    harts, slot_mask, mask = worker_binding(roles, worker_slots)
+    worker_count = len(harts)
     m, n, k = admit_signed_gemm(module)
-    mask = sum(1 << s for s in worker_slots)
     layout = split_vme.from_config(m, n, k, unit=unit, config=config, worker_mask=mask)
     work = Path(work).resolve()
     work.mkdir(parents=True, exist_ok=False)
@@ -196,7 +210,7 @@ def prepare_staged_kernel(
 typedef struct {{
  iris_vme_split_buffers buffers;
  iris_vme_split_work work;
- size_t completed[2];
+ size_t completed[{worker_count}];
  _Alignas({align}) int8_t at[{m * k}],bp[{k * n}];
  _Alignas({align}) int32_t cp[{m * n}];
 }} {state};
@@ -205,9 +219,12 @@ int {prefix}_compute(void*,const merlin_staged_kernel_invocation*,unsigned);
 int {prefix}_finish(void*,const merlin_staged_kernel_invocation*);
 #endif
 """)
+    hart_checks = "||".join(
+        f"i->worker_harts[{slot}]!={hart}" for slot, hart in enumerate(harts)
+    )
     common = f'''#include "{header.name}"
 static int valid(const merlin_staged_kernel_invocation*i){{
- if(!i||i->abi_version!=MERLIN_STAGED_KERNEL_ABI_VERSION||i->input_count!=2||i->output_count!=1||i->argument_count!=3||!i->sequence||i->worker_count!=2||i->selected_worker_mask!={mask}||!i->worker_harts||i->worker_harts[0]!=0||i->worker_harts[1]!=1||!i->arguments||!i->data||!i->capacities||!i->descriptors)return 0;
+ if(!i||i->abi_version!=MERLIN_STAGED_KERNEL_ABI_VERSION||i->input_count!=2||i->output_count!=1||i->argument_count!=3||!i->sequence||i->worker_count!={worker_count}||i->selected_worker_mask!={slot_mask}||!i->worker_harts||{hart_checks}||!i->arguments||!i->data||!i->capacities||!i->descriptors)return 0;
  const long dims[3][2]={{{{{m},{k}}},{{{k},{n}}},{{{m},{n}}}}};
  for(unsigned j=0;j<3;j++)if(i->arguments[j].kind!=(j<2?MERLIN_INPUT:MERLIN_OUTPUT)||i->arguments[j].rank!=2||i->arguments[j].dims[0]!=dims[j][0]||i->arguments[j].dims[1]!=dims[j][1]||i->arguments[j].elem_size!=(j<2?1:4)||!i->descriptors[j])return 0;
  return 1;
@@ -219,6 +236,7 @@ static int valid(const merlin_staged_kernel_invocation*i){{
         + f"""
 int {prefix}_prepare(void*raw,const merlin_staged_kernel_invocation*i){{
  if(!raw||!valid(i))return -601;{state}*s=raw;
+ for(unsigned slot=0;slot<{worker_count};slot++)s->completed[slot]=0;
  s->buffers=(iris_vme_split_buffers){{.a=i->data[0],.b=i->data[1],.output=i->data[2],.at=s->at,.bp=s->bp,.cp=s->cp,.a_bytes=i->capacities[0],.b_bytes=i->capacities[1],.output_bytes=i->capacities[2],.at_bytes=sizeof s->at,.bp_bytes=sizeof s->bp,.cp_bytes=sizeof s->cp,.m={m},.n={n},.k={k},.tile_edge={te},.alignment_bytes={align},.sequence=i->sequence,.worker_mask={mask}}};
  return iris_vme_split_prepare(&s->buffers,&s->work);
 }}
@@ -233,7 +251,7 @@ int {prefix}_finish(void*raw,const merlin_staged_kernel_invocation*i){{
         common
         + f"""
 int {prefix}_compute(void*raw,const merlin_staged_kernel_invocation*i,unsigned slot){{
- if(!raw||!valid(i)||slot>=2||!(i->selected_worker_mask&(1u<<slot))||iris_vme_split_hart()!=i->worker_harts[slot])return -604;
+ if(!raw||!valid(i)||slot>={worker_count}||!(i->selected_worker_mask&(1u<<slot))||iris_vme_split_hart()!=i->worker_harts[slot])return -604;
  {state}*s=raw;if(s->work.sequence!=i->sequence)return -605;
  return iris_vme_split_compute(&s->work,&s->completed[slot]);
 }}
@@ -343,6 +361,10 @@ int {prefix}_compute(void*raw,const merlin_staged_kernel_invocation*i,unsigned s
         "schema": "iris.outlined_split_vme.v1",
         "unit": unit,
         "config": config,
+        "worker_harts": list(harts),
+        "worker_count": worker_count,
+        "selected_worker_slot_mask": slot_mask,
+        "selected_physical_hart_mask": mask,
         "source_shape": [m, n, k],
         "numeric_contract": "closed zero-seeded signedI8×signedI8 wrappingI32",
         "layout": layout.to_dict(),
@@ -382,6 +404,6 @@ int {prefix}_compute(void*raw,const merlin_staged_kernel_invocation*i,unsigned s
         {str(p.resolve()): sha256_file(p) for p in bound if p.is_file()},
         provenance,
     )
-    value.verify(worker_count=2)
+    value.verify(worker_count=worker_count)
     (work / "prepared.json").write_text(json.dumps(value.record(), indent=2) + "\n")
     return value

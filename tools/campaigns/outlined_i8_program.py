@@ -104,11 +104,14 @@ def build(args):
         composition = validate_backend_composition(ROOT)
         source = args.source.resolve()
         module = parse_mlir_text(source.read_text())
-        roles = StagedRoles((0, 1, 2), 2, 2, 2, 2, (0, 1), (0, 1))
+        harts = tuple(args.compute_harts)
+        roles = StagedRoles((0, 1, 2), 2, 2, 2, 2, harts, harts)
+        # Validate physical placement before creating any build output.
+        backend.staged_kernel_api().worker_binding(roles, tuple(range(len(harts))))
         plan = plan_deployable_chain(
             module,
             worker_slots=tuple(args.worker_slots),
-            worker_count=2,
+            worker_count=len(harts),
             workspace_budget_bytes=args.workspace_budget_bytes,
             alignment_bytes=64,
         )
@@ -138,7 +141,7 @@ def build(args):
                 unit=args.unit,
                 config=args.config,
                 roles=roles,
-                worker_slots=(0, 1),
+                worker_slots=tuple(range(len(harts))),
                 cc=toolchain.clang(),
                 controller_cflags=controller_flags,
                 compute_cflags=compute_flags,
@@ -173,6 +176,7 @@ def build(args):
                 "schema": "iris.outlined_i8_program_build.v1",
                 "status": "built_linkable_not_execution_admitted",
                 "route": args.route,
+                "compute_harts": list(harts),
                 "selected_dispatch": args.dispatch_index,
                 "ordinary_dispatch_worker_slots": list(args.worker_slots),
                 "prepared_selected_worker_slots": list(prepared.worker_slots),
@@ -221,6 +225,9 @@ def parser():
     result.add_argument("--output", type=Path, required=True)
     result.add_argument("--route", choices=("rvv", "vme"), required=True)
     result.add_argument("--dispatch-index", type=int, required=True)
+    result.add_argument(
+        "--compute-harts", type=int, choices=(0, 1), nargs="+", default=(0, 1)
+    )
     result.add_argument(
         "--worker-slots", type=int, choices=(0, 1), nargs="+", required=True
     )

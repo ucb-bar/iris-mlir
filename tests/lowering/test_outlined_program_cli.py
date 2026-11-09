@@ -1,7 +1,10 @@
 """Public selected-provider edge delegates to the shared chain builder."""
 
 import importlib.util
+import json
 import os
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -149,6 +152,124 @@ def test_actual_public_example_builds_linkable_chain(tmp_path, route, operations
     )
     assert Path(report["chain_build"]).is_file()
     assert not any(p.suffix == ".elf" for p in (tmp_path / route).rglob("*"))
+
+
+@pytest.mark.parametrize("route", ["rvv", "vme"])
+@pytest.mark.parametrize("hart", [0, 1])
+def test_actual_single_compute_hart_builds_both_prepared_routes(tmp_path, route, hart):
+    from merlin.llvmlower import toolchain
+
+    if not os.environ.get("MERLIN_CHIPYARD_IRIS") or not toolchain.available():
+        pytest.skip("explicit pinned RTL and compiler installation required")
+    source = tmp_path / "source.mlir"
+    source.write_text(authored_source(2))
+    args = arguments(source, tmp_path / route, route, slots=(0, 0))
+    args.compute_harts = (hart,)
+    report = CLI.build(args)
+    assert report["compute_harts"] == [hart]
+    assert report["ordinary_dispatch_worker_slots"] == [0, 0]
+    assert report["prepared_selected_worker_slots"] == [0]
+    provider = report["provider"]["provenance"]
+    assert provider["worker_count"] == 1
+    assert provider["worker_harts"] == [hart]
+    assert provider["selected_worker_slot_mask"] == 1
+    assert provider["selected_physical_hart_mask"] == 1 << hart
+    assert all(
+        Path(path).read_bytes().startswith(b"\x7fELF")
+        for path in report["provider"]["objects"]
+    )
+    chain = json.loads(Path(report["chain_build"]).read_text())
+    assert chain["roles"]["compute_harts"] == [hart]
+    assert chain["roles"]["profile_harts"] == [hart]
+    if route == "rvv":
+        _check_host_worker_protocol(
+            report["provider"], tmp_path / "host-protocol", hart
+        )
+
+
+def _check_host_worker_protocol(prepared, work, hart):
+    """Exercise actual generated control/compute C; arithmetic leaves are stubs."""
+    from merlin.common.paths import runtime_dir
+
+    cc = shutil.which("cc")
+    if cc is None:
+        pytest.skip("host C compiler required for callback protocol verification")
+    work.mkdir()
+    provider = prepared["provenance"]
+    base = provider["base_controller_record"]
+    header = Path(prepared["header"])
+    base_header = Path(base["header"])
+    control = header.with_name(header.stem + "_control.c")
+    compute = header.with_name(header.stem + "_compute.c")
+    base_control = base_header.with_name(base_header.stem + "_control.c")
+    runtime = runtime_dir() / "c"
+    stubs = "\n".join(
+        f"void {leaf['c_interface_symbol']}(void*a,void*b,void*c){{(void)a;(void)b;(void)c;leaf_calls++;}}"
+        for leaf in provider["leaves"]
+    )
+    source = work / "protocol.c"
+    source.write_text(f'''#include <assert.h>
+#include <stdint.h>
+#include "{header}"
+unsigned iris_vme_split_test_hart=2;
+static unsigned leaf_calls;
+{stubs}
+int main(void){{
+ _Alignas(64) int8_t a[3*17]={{0}},b[17*65]={{0}};
+ _Alignas(64) int32_t c[3*65]={{0}};
+ {prepared["state_type"]} state;
+ const merlin_arg_t args[3]={{{{.kind=MERLIN_INPUT,.rank=2,.dims={{3,17}},.elem_size=1}},
+  {{.kind=MERLIN_INPUT,.rank=2,.dims={{17,65}},.elem_size=1}},
+  {{.kind=MERLIN_OUTPUT,.rank=2,.dims={{3,65}},.elem_size=4}}}};
+ void*data[3]={{a,b,c}},*descriptors[3]={{a,b,c}};
+ const size_t capacities[3]={{sizeof a,sizeof b,sizeof c}};
+ unsigned harts[1]={{{hart}}};
+ merlin_staged_kernel_invocation i={{.abi_version=MERLIN_STAGED_KERNEL_ABI_VERSION,
+  .input_count=2,.output_count=1,.argument_count=3,.arguments=args,.data=data,
+  .capacities=capacities,.descriptors=descriptors,.sequence=1,.worker_count=1,
+  .selected_worker_mask=1,.worker_harts=harts}};
+ assert({prepared["prepare"]}(&state,&i)==0);
+ state.calls[0]=99;state.base.completed[0]=99;
+ assert({prepared["prepare"]}(&state,&i)==0);
+ assert(state.calls[0]==0&&state.base.completed[0]==0&&state.counts[0]>0);
+ iris_vme_split_test_hart={hart};
+ assert({prepared["compute"]}(&state,&i,0)==0);
+ assert(leaf_calls==state.counts[0]&&state.calls[0]==state.counts[0]);
+ assert({prepared["compute"]}(&state,&i,1)!=0);
+ i.selected_worker_mask=2;
+ assert({prepared["compute"]}(&state,&i,0)!=0);
+ iris_vme_split_test_hart=2;
+ assert({prepared["prepare"]}(&state,&i)!=0);
+ i.selected_worker_mask=1;harts[0]=2;
+ assert({prepared["prepare"]}(&state,&i)!=0);
+ harts[0]={hart};
+ assert({prepared["finish"]}(&state,&i)==0);
+ return 0;
+}}
+''')
+    executable = work / "protocol"
+    subprocess.run(
+        [
+            cc,
+            "-std=c11",
+            "-O1",
+            "-DIRIS_VME_SPLIT_HOST_TEST",
+            "-I" + str(runtime),
+            "-I" + str(base_header.parent / "kernel"),
+            str(source),
+            str(control),
+            str(compute),
+            str(base_control),
+            str(base_header.parent / "kernel/vme_split_prepare.c"),
+            str(runtime / "merlin_descriptors.c"),
+            "-o",
+            str(executable),
+        ],
+        check=True,
+        capture_output=True,
+        timeout=60,
+    )
+    subprocess.run([str(executable)], check=True, capture_output=True, timeout=10)
 
 
 @pytest.mark.parametrize("slots", [(0,), (0, 1, 0)])

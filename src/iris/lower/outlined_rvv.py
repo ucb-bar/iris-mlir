@@ -16,7 +16,7 @@ def partition(m, n, tile_edge, worker_slots, *, job_budget):
     if (
         not slots
         or len(set(slots)) != len(slots)
-        or any(s not in (0, 1) for s in slots)
+        or any(type(s) is not int or s not in (0, 1) for s in slots)
     ):
         raise ValueError("Iris compute slots0/1 required")
 
@@ -77,7 +77,22 @@ def prepare_staged_kernel(
     from .. import backend
     from .outlined_vme import admit_signed_gemm
 
-    base.verify(worker_count=2)
+    harts = tuple(base.provenance.get("worker_harts", ()))
+    if harts not in ((0,), (1,), (0, 1)) or any(
+        type(hart) is not int for hart in harts
+    ):
+        raise ValueError("base must bind the actual Iris compute-hart roster")
+    worker_count = len(harts)
+    base.verify(worker_count=worker_count)
+    slot_mask = sum(1 << slot for slot in base.worker_slots)
+    physical_mask = sum(1 << harts[slot] for slot in base.worker_slots)
+    if (
+        base.provenance.get("worker_count") != worker_count
+        or base.provenance.get("selected_worker_slot_mask") != slot_mask
+        or base.provenance.get("selected_physical_hart_mask") != physical_mask
+        or base.provenance.get("layout", {}).get("worker_mask") != physical_mask
+    ):
+        raise ValueError("base logical slots and physical compute mask differ")
     source = checked_generic_text(module)
     if hashlib.sha256(source.encode()).hexdigest() != base.source_ir_sha256:
         raise ValueError("RVV comparator source differs from prepared VME source")
@@ -182,7 +197,7 @@ def prepare_staged_kernel(
             "LLVM": str(result.ll_path),
             "LLVM_sha256": sha256_file(result.ll_path),
         }
-    counts = [sum(j["slot"] == s for j in jobs) for s in (0, 1)]
+    counts = [sum(j["slot"] == s for j in jobs) for s in range(worker_count)]
     max_jobs = max(counts)
     state = prefix + "_state"
     header = work / (prefix + ".h")
@@ -191,7 +206,7 @@ def prepare_staged_kernel(
 #include {json.dumps(str(base.header))}
 typedef void (*{prefix}_leaf_fn)(void*,void*,void*);
 typedef struct {{{prefix}_leaf_fn function;merlin_descriptor_t arguments[3];unsigned last;}} {prefix}_job;
-typedef struct {{{base.state_type} base;unsigned counts[2],calls[2];{prefix}_job jobs[2][{max_jobs}];}} {state};
+typedef struct {{{base.state_type} base;unsigned counts[{worker_count}],calls[{worker_count}];{prefix}_job jobs[{worker_count}][{max_jobs}];}} {state};
 int {prefix}_prepare(void*,const merlin_staged_kernel_invocation*);
 int {prefix}_compute(void*,const merlin_staged_kernel_invocation*,unsigned);
 int {prefix}_finish(void*,const merlin_staged_kernel_invocation*);
@@ -202,7 +217,7 @@ int {prefix}_finish(void*,const merlin_staged_kernel_invocation*);
         for leaf in leaves.values()
     )
     preparation = []
-    for slot in (0, 1):
+    for slot in range(worker_count):
         for index, job in enumerate(j for j in jobs if j["slot"] == slot):
             fn = leaves[(job["m"], job["n"])]["c_interface_symbol"]
             row, col, mm, nn = job["row"], job["col"], job["m"], job["n"]
@@ -212,24 +227,31 @@ int {prefix}_finish(void*,const merlin_staged_kernel_invocation*);
     merlin_prepare_strided_descriptor(s->base.bp,sizeof s->base.bp,1,2,{col},bs,bp,&j->arguments[1])||
     merlin_prepare_strided_descriptor(s->base.cp,sizeof s->base.cp,4,2,{row * n + col},cs,bp,&j->arguments[2]))return -702;}}
 """)
+    count_initializers = "".join(
+        f"s->counts[{slot}]={count};s->calls[{slot}]=0;"
+        for slot, count in enumerate(counts)
+    )
     control = work / (prefix + "_control.c")
     control.write_text(f'''#include "{header.name}"
 {declarations}
 int {prefix}_prepare(void*raw,const merlin_staged_kernel_invocation*i){{
  if(!raw)return -701;{state}*s=raw;int result={base.prepare}(&s->base,i);if(result)return result;
- s->counts[0]={counts[0]};s->counts[1]={counts[1]};
+ {count_initializers}
  {"".join(preparation)}
  return 0;
 }}
 int {prefix}_finish(void*raw,const merlin_staged_kernel_invocation*i){{
- if(!raw)return -703;{state}*s=raw;for(unsigned q=0;q<2;q++)if(s->calls[q]!=s->counts[q])return -704;
+ if(!raw)return -703;{state}*s=raw;for(unsigned q=0;q<{worker_count};q++)if(s->calls[q]!=s->counts[q])return -704;
  return {base.finish}(&s->base,i);
 }}
 ''')
+    hart_checks = "||".join(
+        f"i->worker_harts[{slot}]!={hart}" for slot, hart in enumerate(harts)
+    )
     compute = work / (prefix + "_compute.c")
     compute.write_text(f'''#include "{header.name}"
 int {prefix}_compute(void*raw,const merlin_staged_kernel_invocation*i,unsigned slot){{
- if(!raw||!i||slot>=2||i->abi_version!=MERLIN_STAGED_KERNEL_ABI_VERSION||i->worker_count!=2||!i->worker_harts||iris_vme_split_hart()!=i->worker_harts[slot]||!(i->selected_worker_mask&(1u<<slot)))return -705;
+ if(!raw||!i||slot>={worker_count}||i->abi_version!=MERLIN_STAGED_KERNEL_ABI_VERSION||i->worker_count!={worker_count}||!i->worker_harts||{hart_checks}||iris_vme_split_hart()!=i->worker_harts[slot]||i->selected_worker_mask!={slot_mask}||!(i->selected_worker_mask&(1u<<slot)))return -705;
  {state}*s=raw;if(s->base.work.sequence!=i->sequence)return -706;
  for(unsigned q=0;q<s->counts[slot];q++){{{prefix}_job*j=&s->jobs[slot][q];j->function(&j->arguments[0],&j->arguments[1],&j->arguments[2]);s->calls[slot]++;if(j->last)s->base.completed[slot]++;}}
 #if defined(__riscv)
@@ -280,6 +302,10 @@ int {prefix}_compute(void*raw,const merlin_staged_kernel_invocation*i,unsigned s
     provenance = {
         "schema": "iris.outlined_compiler_rvv.v1",
         "source_shape": [m, n, k],
+        "worker_harts": list(harts),
+        "worker_count": worker_count,
+        "selected_worker_slot_mask": slot_mask,
+        "selected_physical_hart_mask": physical_mask,
         "VLEN_bits": vlen,
         "jobs": jobs,
         "leaves": list(leaves.values()),
@@ -325,6 +351,6 @@ int {prefix}_compute(void*raw,const merlin_staged_kernel_invocation*i,unsigned s
         pins,
         provenance,
     )
-    value.verify(worker_count=2)
+    value.verify(worker_count=worker_count)
     (work / "prepared.json").write_text(json.dumps(value.record(), indent=2) + "\n")
     return value
