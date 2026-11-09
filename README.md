@@ -124,6 +124,10 @@ needed to finish it.
 
 ### Explicit outlined split kernels
 
+The public [outlined INT8 build command](docs/OUTLINED_I8.md) builds either explicit
+route from one authored graph using the scoped, verified Iris/RVV source pair.
+It emits linkable chain artifacts; target execution admission remains separate.
+
 `iris.backend.staged_kernel_api()` exposes a separate opt-in builder for one
 closed, canonical, zero-seeded signed-I8 × signed-I8 → wrapping-I32 tensor MAC.
 It proves the scalar dataflow, types, layout and unflagged arithmetic; equal
