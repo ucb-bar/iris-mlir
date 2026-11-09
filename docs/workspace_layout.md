@@ -4,6 +4,10 @@
 SRAM tuple from a generated, preprocessed Zephyr DTS using the selected SDK's
 `dtlib.py`. The DTS describes a software allocation; it does not certify the
 memory capacity of a loaded FPGA image.
+The current emitter requires the chosen memory node directly under the root,
+with exactly two root address cells and two root size cells. Nested bus address
+translations and other cell widths refuse rather than emitting a mismatched
+overlay. Direct `DeclaredDram` callers must supply the same root-cell contract.
 
 Select low RAM and workspace budgets explicitly. The tool splits that declared
 DRAM into disjoint low RAM and a separate workspace region. Low RAM contains
@@ -69,6 +73,9 @@ lack LOAD coverage when exclusion was requested. Other unmapped code/data,
 misplaced boot anchors, leftover ISR build metadata, altered workspace bounds
 and overlapping loader segments refuse. This is a software map gate, separate
 from complete numerical, initialization, physical-image and capacity evidence.
+LOAD memory spans must be pairwise disjoint, including zero-file-size spans
+that would otherwise shadow initialized data. A file payload with an empty
+memory span also refuses.
 
 Loader exclusion requires identity-mapped non-XIP RAM. Its custom linker adds
 explicit low-RAM LOAD and non-executable-stack program headers, routing ordinary

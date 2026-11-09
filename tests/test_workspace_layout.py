@@ -80,6 +80,7 @@ def test_invalid_bounds_decline(changes):
         (0, 4096, "/"),
         (0, 4096, "/memory@0};bad"),
         (0, 4096, "/x\ny"),
+        (0, 4096, "/soc/memory@0"),
     ],
 )
 def test_bad_declared_source(origin, size, path):
@@ -171,6 +172,45 @@ def test_preprocessed_input_required(tmp_path, text):
     dts.write_text(text)
     parser.write_text('raise AssertionError("must not execute")')
     with pytest.raises(ValueError, match="preprocessed"):
+        from_zephyr_dts(dts, parser)
+
+
+@pytest.mark.parametrize("address_cells,size_cells", [(1, 1), (1, 2), (2, 1)])
+def test_actual_parser_refuses_unsupported_root_cell_widths(
+    tmp_path, address_cells, size_cells
+):
+    from iris.workspace_layout import from_zephyr_dts
+
+    parser = _actual_elf("IRIS_TEST_DTLIB")
+    address = "0 0x80000000" if address_cells == 2 else "0x80000000"
+    size = "0 0x100000" if size_cells == 2 else "0x100000"
+    dts = tmp_path / "cells.dts"
+    dts.write_text(
+        f"""/dts-v1/;
+/ {{ #address-cells=<{address_cells}>; #size-cells=<{size_cells}>;
+ chosen {{ zephyr,sram=&dram; }};
+ dram: memory@80000000 {{ device_type="memory"; reg=<{address} {size}>; }};
+}};
+"""
+    )
+    with pytest.raises(ValueError, match="two address and two size cells"):
+        from_zephyr_dts(dts, parser)
+
+
+def test_actual_parser_refuses_nested_memory_contract(tmp_path):
+    from iris.workspace_layout import from_zephyr_dts
+
+    parser = _actual_elf("IRIS_TEST_DTLIB")
+    dts = tmp_path / "nested.dts"
+    dts.write_text("""/dts-v1/;
+/ { #address-cells=<2>; #size-cells=<2>;
+ chosen { zephyr,sram=&dram; };
+ soc { #address-cells=<2>; #size-cells=<2>; ranges;
+  dram: memory@80000000 { device_type="memory"; reg=<0 0x80000000 1 0>; };
+ };
+};
+""")
+    with pytest.raises(ValueError, match="root-level memory"):
         from_zephyr_dts(dts, parser)
 
 
@@ -339,3 +379,57 @@ def test_malformed_actual_load_or_boot_anchor_refuses(tmp_path, mutation):
     out.write_bytes(raw)
     with pytest.raises(ValueError):
         layout(loader_visible=False).validate_elf(out)
+
+
+@pytest.mark.parametrize("file_bytes", [0, 64])
+def test_overlapping_actual_load_segments_refuse(tmp_path, file_bytes):
+    import struct
+
+    from elftools.elf.elffile import ELFFile
+
+    source = _actual_elf("IRIS_TEST_EXCLUDED_ELF")
+    raw = bytearray(source.read_bytes())
+    with source.open("rb") as stream:
+        elf = ELFFile(stream)
+        segments = list(elf.iter_segments())
+        load = next(s for s in segments if s["p_type"] == "PT_LOAD")
+        index = next(i for i, s in enumerate(segments) if s["p_type"] == "PT_GNU_STACK")
+        offset = int(elf["e_phoff"]) + index * int(elf["e_phentsize"])
+        address = int(load["p_paddr"]) + 128
+        # Even a zero-file-size segment would zero initialized code/data here.
+        fields = (
+            1,
+            4,
+            int(load["p_offset"]) + 128,
+            address,
+            address,
+            file_bytes,
+            128,
+            1,
+        )
+        struct.pack_into("<IIQQQQQQ", raw, offset, *fields)
+    bad = tmp_path / "overlap.elf"
+    bad.write_bytes(raw)
+    with pytest.raises(ValueError, match="overlapping LOAD memory spans"):
+        layout(loader_visible=False).validate_elf(bad)
+
+
+def test_actual_load_with_file_bytes_and_no_memory_refuses(tmp_path):
+    import struct
+
+    from elftools.elf.elffile import ELFFile
+
+    source = _actual_elf("IRIS_TEST_EXCLUDED_ELF")
+    raw = bytearray(source.read_bytes())
+    with source.open("rb") as stream:
+        elf = ELFFile(stream)
+        index = next(
+            i for i, s in enumerate(elf.iter_segments()) if s["p_type"] == "PT_LOAD"
+        )
+        offset = int(elf["e_phoff"]) + index * int(elf["e_phentsize"])
+    # Preserve the nonzero real file payload while making the memory span empty.
+    struct.pack_into("<Q", raw, offset + 40, 0)
+    bad = tmp_path / "empty-memory.elf"
+    bad.write_bytes(raw)
+    with pytest.raises(ValueError, match="file span exceeds memory span"):
+        layout(loader_visible=False).validate_elf(bad)

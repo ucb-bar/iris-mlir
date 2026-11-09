@@ -55,10 +55,11 @@ class DeclaredDram:
             not isinstance(self.node_path, str)
             or not self.node_path.startswith("/")
             or self.node_path == "/"
+            or self.node_path.count("/") != 1
             or "//" in self.node_path
             or any(c not in allowed for c in self.node_path)
         ):
-            raise ValueError("complete safe declared memory-node path required")
+            raise ValueError("safe root-level declared memory-node path required")
 
     def verify(self):
         for name, digest in self.input_sha256:
@@ -102,13 +103,17 @@ def from_zephyr_dts(dts: Path, dtlib: Path) -> DeclaredDram:
         module._iris_source_sha = pins[1][1]
     tree = module.DT(str(dts))
     node = tree.get_node("/chosen").props["zephyr,sram"].to_path()
-    if node.props["device_type"].to_string() != "memory" or node.parent is None:
-        raise ValueError("chosen SRAM is not an explicit memory node")
+    if (
+        node.props["device_type"].to_string() != "memory"
+        or node.parent is None
+        or node.parent.path != "/"
+    ):
+        raise ValueError("chosen SRAM must be an explicit root-level memory node")
     ac = node.parent.props["#address-cells"].to_num()
     sc = node.parent.props["#size-cells"].to_num()
     values = node.props["reg"].to_nums()
-    if ac not in (1, 2) or sc not in (1, 2) or len(values) != ac + sc:
-        raise ValueError("one explicitly sized 32/64-bit DRAM tuple required")
+    if ac != 2 or sc != 2 or len(values) != 4:
+        raise ValueError("root memory requires two address and two size cells")
 
     def combine(cells):
         result = 0
@@ -359,9 +364,13 @@ PHDRS { iris_low PT_LOAD; iris_stack PT_GNU_STACK FLAGS(6); }
             ):
                 raise ValueError("observed little-endian RV64 ELF required")
             for segment in elf.iter_segments():
-                if segment["p_type"] != "PT_LOAD" or not segment["p_memsz"]:
+                if segment["p_type"] != "PT_LOAD":
                     continue
                 begin, size = int(segment["p_paddr"]), int(segment["p_memsz"])
+                if int(segment["p_filesz"]) > size:
+                    raise ValueError("LOAD file span exceeds memory span")
+                if not size:
+                    continue
                 if not int(segment["p_flags"]) & P_FLAGS.PF_R:
                     raise ValueError("LOAD must retain readable RAM permissions")
                 if (
@@ -396,6 +405,12 @@ PHDRS { iris_low PT_LOAD; iris_stack PT_GNU_STACK FLAGS(6); }
                     )
                 ):
                     raise ValueError("invalid LOAD file span or alignment")
+                if any(
+                    begin < other["address"] + other["memory_bytes"]
+                    and other["address"] < begin + size
+                    for other in loads
+                ):
+                    raise ValueError("overlapping LOAD memory spans")
                 loads.append(
                     {
                         "address": begin,
