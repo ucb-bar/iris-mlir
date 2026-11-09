@@ -93,26 +93,5 @@ complete numerical gate before evaluating performance. Compare against the
 best legal RVV panel configuration on the same inputs, not an untuned full
 im2col control. Functional Spike instruction counts are not hardware cycles.
 
-
-## First actual compiler FPGA check
-
-A small NCHW case (batch2, Ci2, Co32, OH3, OW7, 3x3 filter,
-stride-H2, dilation-W2, panel4 with tail3) passed all12 regions and
-16,128 independent I32 word checks through the complete managed FireSim
-lifecycle, cleanup and archive. After one warmup, two measured repetitions gave:
-
-| Route | Full-im2col cycles | Streaming cycles | Cycle change |
-|---|---:|---:|---:|
-| RVV | 527,108.5 | 768,097 | +45.72% |
-| VME | 34,824.5 | 53,568 | +53.82% |
-
-These are guest `mcycle` counts on the existing VLEN256/DLEN128 image,
-not a timing-model accuracy certificate. The streaming schedule remains opt-in;
-this small tail-heavy case exposes extra loop/packing overhead. Both routes
-use identical input bytes and signed integer math, but their authored graphs
-and returned output layouts differ. Each full-versus-stream pair is valid;
-a cross-backend RVV-versus-VME speedup is not qualified by this packet.
-The exact checksums differ only by that output permutation. See the
-[measurement receipt](measurements/compiled_streaming_20261108.json) for hashes
-and scope. Physical RVV/VME/core/DMA busy fractions are unavailable; architectural
-lane fill and retired instruction mix must be reported separately.
+Performance measurements and profiling figures are maintained in private project
+results. This public guide describes the opt-in API and supported semantics.

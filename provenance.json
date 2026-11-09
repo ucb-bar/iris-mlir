@@ -110,7 +110,7 @@
       "path": "docs/STREAMING_IM2COL.md",
       "source": "Iris provider authored; RVV panel API @250e93e726f373810776bd5113939e51c4162cad; existing matrix unit contract/derived geometry",
       "change": "Opt-in signed-I8 streaming window schedule and strict tests; no default, hardware timing or physical utilization claim",
-      "sha256": "2664fbf3b5223f58ae4eba94620c2316b23fdeef3dc782da88399cde2b007ae0"
+      "sha256": "f9854691ee099baa09be77e307cfbe5a7205ef9888eafff0a1a9c35403b34d2e"
     },
     {
       "path": "contracts/streaming_support_pins.json",
@@ -120,8 +120,8 @@
     },
     {
       "path": "kernels/vme_gemm_1x2_reuse.c",
-      "source": "Iris scheduling development; full source and measured artifact pins in docs/measurements/vme_1x2_20261108.json",
-      "change": "Explicit opt-in guarded signed-INT8 partial-M 1x2 A reuse; measured prototype, fresh native package gate; exact package hardware timing unqualified",
+      "source": "Iris scheduling development; exact source input and campaign receipts maintained in private project evidence",
+      "change": "Explicit opt-in guarded signed-INT8 partial-M 1x2 A reuse; explicit opt-in schedule with guarded register geometry",
       "sha256": "8d0eb0f4da4c8cb9c17309df9c8d5791db5f99e7c0a3371a51d2dfde4181fec1"
     }
   ],
