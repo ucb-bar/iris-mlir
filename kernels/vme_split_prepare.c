@@ -30,7 +30,7 @@ static int dimensions(size_t m, size_t n, size_t k, size_t te,
 static int validate_buffers(const iris_vme_split_buffers *s,
                             const iris_vme_split_work *w,
                             size_t *a, size_t *b, size_t *c,
-                            size_t *columns, size_t *blocks) {
+                            size_t *columns, size_t *blocks, int readonly_b) {
   span spans[8];
   if (!s || !w || !s->sequence || !s->worker_mask || (s->worker_mask & ~3U) ||
       !dimensions(s->m, s->n, s->k, s->tile_edge, a, b, c, columns, blocks))
@@ -48,11 +48,17 @@ static int validate_buffers(const iris_vme_split_buffers *s,
       !make_span(s->bp, *b, &spans[4]) || !make_span(s->cp, *c, &spans[5]) ||
       !make_span(s, sizeof(*s), &spans[6]) || !make_span(w, sizeof(*w), &spans[7]))
     return IRIS_VME_SPLIT_SHAPE;
-  /* Inputs may alias each other because both are read-only. Everything else
+  if (readonly_b && (s->b != s->bp || s->b_bytes != s->bp_bytes))
+    return IRIS_VME_SPLIT_ALIAS;
+  /* In the explicit lease only B and Bp are the exact same readonly span.
+   * A may alias that readonly span, just as it may alias B in the ordinary ABI.
+   * Inputs may alias each other because both are read-only. Everything else
    * is distinct, including controller metadata and the canonical output. */
   for (unsigned i = 0; i < 8; ++i)
     for (unsigned j = i + 1; j < 8; ++j)
-      if (!(i == 0 && j == 1) && overlap(spans[i], spans[j]))
+      if (!(i == 0 && j == 1) &&
+          !(readonly_b && ((i == 1 && j == 4) || (i == 0 && j == 4))) &&
+          overlap(spans[i], spans[j]))
         return IRIS_VME_SPLIT_ALIAS;
   return IRIS_VME_SPLIT_OK;
 }
@@ -75,11 +81,11 @@ static void copy_bytes(int8_t *to, const int8_t *from, size_t bytes) {
 #endif
 }
 
-int iris_vme_split_prepare(const iris_vme_split_buffers *s,
-                           iris_vme_split_work *w) {
+static int prepare(const iris_vme_split_buffers *s,
+                   iris_vme_split_work *w, int readonly_b) {
   if (iris_vme_split_hart() != 2) return IRIS_VME_SPLIT_ROLE;
   size_t a, b, c, columns, blocks;
-  int status = validate_buffers(s, w, &a, &b, &c, &columns, &blocks);
+  int status = validate_buffers(s, w, &a, &b, &c, &columns, &blocks, readonly_b);
   if (status) return status;
   for (size_t kk = 0; kk < s->k; ++kk) {
 #if defined(__riscv_vector)
@@ -99,7 +105,7 @@ int iris_vme_split_prepare(const iris_vme_split_buffers *s,
       s->at[kk * s->m + row] = s->a[row * s->k + kk];
 #endif
   }
-  copy_bytes(s->bp, s->b, b);
+  if (!readonly_b) copy_bytes(s->bp, s->b, b);
   for (size_t i = 0; i < c / sizeof(int32_t); ++i) s->cp[i] = 0;
 #if defined(__riscv)
   __asm__ volatile("fence rw,rw" ::: "memory");
@@ -107,6 +113,15 @@ int iris_vme_split_prepare(const iris_vme_split_buffers *s,
   *w = (iris_vme_split_work){s->at, s->bp, s->cp, s->m, s->n, s->k,
        s->tile_edge, s->alignment_bytes, columns, blocks, s->sequence, s->worker_mask};
   return IRIS_VME_SPLIT_OK;
+}
+
+int iris_vme_split_prepare(const iris_vme_split_buffers *s,
+                           iris_vme_split_work *w) {
+  return prepare(s, w, 0);
+}
+int iris_vme_split_prepare_readonly_b(const iris_vme_split_buffers *s,
+                                     iris_vme_split_work *w) {
+  return prepare(s, w, 1);
 }
 
 int iris_vme_split_validate_work(const iris_vme_split_work *w) {
@@ -129,11 +144,11 @@ int iris_vme_split_validate_work(const iris_vme_split_work *w) {
   return IRIS_VME_SPLIT_OK;
 }
 
-int iris_vme_split_finish(const iris_vme_split_buffers *s,
-                          const iris_vme_split_work *w) {
+static int finish(const iris_vme_split_buffers *s,
+                  const iris_vme_split_work *w, int readonly_b) {
   if (iris_vme_split_hart() != 2) return IRIS_VME_SPLIT_ROLE;
   size_t a, b, c, columns, blocks;
-  int status = validate_buffers(s, w, &a, &b, &c, &columns, &blocks);
+  int status = validate_buffers(s, w, &a, &b, &c, &columns, &blocks, readonly_b);
   if (status) return status;
   status = iris_vme_split_validate_work(w);
   if (status) return status;
@@ -146,4 +161,13 @@ int iris_vme_split_finish(const iris_vme_split_buffers *s,
   __asm__ volatile("fence rw,rw" ::: "memory");
 #endif
   return IRIS_VME_SPLIT_OK;
+}
+
+int iris_vme_split_finish(const iris_vme_split_buffers *s,
+                          const iris_vme_split_work *w) {
+  return finish(s, w, 0);
+}
+int iris_vme_split_finish_readonly_b(const iris_vme_split_buffers *s,
+                                    const iris_vme_split_work *w) {
+  return finish(s, w, 1);
 }

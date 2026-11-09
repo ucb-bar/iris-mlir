@@ -56,6 +56,19 @@ typedef struct {
 int iris_vme_split_prepare(const iris_vme_split_buffers *buffers,
                            iris_vme_split_work *work);
 
+/* Explicit immutable-B lease. Bp MUST equal B exactly with equal capacities;
+ * every other writable/metadata span remains disjoint. The caller proves B is
+ * a sealed dense readonly object retained without writers through ALL worker
+ * joins and finish. This is not inferred from pointer identity. Prepare packs
+ * A and clears Cp, but never writes B/Bp. No Bp allocation is required. The
+ * ordinary prepare/finish continue to refuse B==Bp. Setup/load/prepacking and
+ * validation costs remain caller-owned, separate from repeated inference.
+ */
+int iris_vme_split_prepare_readonly_b(const iris_vme_split_buffers *buffers,
+                                     iris_vme_split_work *work);
+int iris_vme_split_finish_readonly_b(const iris_vme_split_buffers *buffers,
+                                    const iris_vme_split_work *work);
+
 /* Hart 0/1 only. No packing, dispatch, OpenMP, allocator or shared pack scratch.
  * Block ownership is cyclic among the selected physical harts in ascending
  * order. completed_blocks counts source-level completed blocks, NOT unit busy.

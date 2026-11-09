@@ -167,6 +167,7 @@ def prepare_staged_kernel(
     runtime_include,
     prefix,
     allow_vector_controller_packing=False,
+    readonly_b=None,
 ):
     """Prepare the existing explicit signed-I8/I32 implementation."""
     return _prepare_staged_kernel(
@@ -182,6 +183,7 @@ def prepare_staged_kernel(
         runtime_include=runtime_include,
         prefix=prefix,
         allow_vector_controller_packing=allow_vector_controller_packing,
+        readonly_b=readonly_b,
         _format="i8_i32",
     )
 
@@ -200,6 +202,7 @@ def _prepare_staged_kernel(
     runtime_include,
     prefix,
     allow_vector_controller_packing=False,
+    readonly_b=None,
     _format,
 ):
     """Prepare a byte-bound staged implementation; explicit selection never falls back."""
@@ -240,6 +243,21 @@ def _prepare_staged_kernel(
     worker_count = len(harts)
     m, n, k = admit(module)
     layout = split_vme.from_config(m, n, k, unit=unit, config=config, worker_mask=mask)
+    if readonly_b is not None:
+        from merlin.runtime.prepared_staged_kernel import ReadonlyInput
+
+        if (
+            _format != "i8_i32"
+            or not isinstance(readonly_b, ReadonlyInput)
+            or readonly_b.index != 1
+            or readonly_b.dtype != "i8"
+            or readonly_b.shape != (k, n)
+            or readonly_b.bytes != k * n
+            or readonly_b.alignment < layout.alignment_bytes
+        ):
+            raise ValueError(
+                "exact dense signed-I8 B readonly type/span/alignment required"
+            )
     work = Path(work).resolve()
     work.mkdir(parents=True, exist_ok=False)
     kernel = work / "kernel"
@@ -255,6 +273,22 @@ def _prepare_staged_kernel(
     te = layout.tile_edge
     state = prefix + "_state"
     header = work / (prefix + ".h")
+    operand_storage = (
+        f"at[{m * k}];" if readonly_b is not None else f"at[{m * k}],bp[{k * n}];"
+    )
+    expected_kind = (
+        "(j==1?MERLIN_WEIGHT:(j<2?MERLIN_INPUT:MERLIN_OUTPUT))"
+        if readonly_b is not None
+        else "(j<2?MERLIN_INPUT:MERLIN_OUTPUT)"
+    )
+    bp_pointer = f"({storage_type}*)i->data[1]" if readonly_b is not None else "s->bp"
+    bp_capacity = "i->capacities[1]" if readonly_b is not None else "sizeof s->bp"
+    prepare_entry = abi_prefix + (
+        "_prepare_readonly_b" if readonly_b is not None else "_prepare"
+    )
+    finish_entry = abi_prefix + (
+        "_finish_readonly_b" if readonly_b is not None else "_finish"
+    )
     header.write_text(f"""#ifndef {prefix.upper()}_H
 #define {prefix.upper()}_H
 #include "merlin_staged_kernel.h"
@@ -263,7 +297,7 @@ typedef struct {{
  {abi_prefix}_buffers buffers;
  {abi_prefix}_work work;
  size_t completed[{worker_count}];
- _Alignas({align}) {storage_type} at[{m * k}],bp[{k * n}];
+ _Alignas({align}) {storage_type} {operand_storage}
  _Alignas({align}) {accumulator_type} cp[{m * n}];
 }} {state};
 int {prefix}_prepare(void*,const merlin_staged_kernel_invocation*);
@@ -278,7 +312,7 @@ int {prefix}_finish(void*,const merlin_staged_kernel_invocation*);
 static int valid(const merlin_staged_kernel_invocation*i){{
  if(!i||i->abi_version!=MERLIN_STAGED_KERNEL_ABI_VERSION||i->input_count!=2||i->output_count!=1||i->argument_count!=3||!i->sequence||i->worker_count!={worker_count}||i->selected_worker_mask!={slot_mask}||!i->worker_harts||{hart_checks}||!i->arguments||!i->data||!i->capacities||!i->descriptors)return 0;
  const long dims[3][2]={{{{{m},{k}}},{{{k},{n}}},{{{m},{n}}}}};
- for(unsigned j=0;j<3;j++)if(i->arguments[j].kind!=(j<2?MERLIN_INPUT:MERLIN_OUTPUT)||i->arguments[j].rank!=2||i->arguments[j].dims[0]!=dims[j][0]||i->arguments[j].dims[1]!=dims[j][1]||i->arguments[j].elem_size!=(j<2?1:4)||!i->descriptors[j])return 0;
+ for(unsigned j=0;j<3;j++)if(i->arguments[j].kind!={expected_kind}||i->arguments[j].rank!=2||i->arguments[j].dims[0]!=dims[j][0]||i->arguments[j].dims[1]!=dims[j][1]||i->arguments[j].elem_size!=(j<2?1:4)||!i->descriptors[j])return 0;
  return 1;
 }}
 '''
@@ -289,12 +323,12 @@ static int valid(const merlin_staged_kernel_invocation*i){{
 int {prefix}_prepare(void*raw,const merlin_staged_kernel_invocation*i){{
  if(!raw||!valid(i))return -601;{state}*s=raw;
  for(unsigned slot=0;slot<{worker_count};slot++)s->completed[slot]=0;
- s->buffers=({abi_prefix}_buffers){{.a=i->data[0],.b=i->data[1],.output=i->data[2],.at=s->at,.bp=s->bp,.cp=s->cp,.a_bytes=i->capacities[0],.b_bytes=i->capacities[1],.output_bytes=i->capacities[2],.at_bytes=sizeof s->at,.bp_bytes=sizeof s->bp,.cp_bytes=sizeof s->cp,.m={m},.n={n},.k={k},.tile_edge={te},.alignment_bytes={align},.sequence=i->sequence,.worker_mask={mask}}};
- return {abi_prefix}_prepare(&s->buffers,&s->work);
+ s->buffers=({abi_prefix}_buffers){{.a=i->data[0],.b=i->data[1],.output=i->data[2],.at=s->at,.bp={bp_pointer},.cp=s->cp,.a_bytes=i->capacities[0],.b_bytes=i->capacities[1],.output_bytes=i->capacities[2],.at_bytes=sizeof s->at,.bp_bytes={bp_capacity},.cp_bytes=sizeof s->cp,.m={m},.n={n},.k={k},.tile_edge={te},.alignment_bytes={align},.sequence=i->sequence,.worker_mask={mask}}};
+ return {prepare_entry}(&s->buffers,&s->work);
 }}
 int {prefix}_finish(void*raw,const merlin_staged_kernel_invocation*i){{
  if(!raw||!valid(i))return -602;{state}*s=raw;if(s->work.sequence!=i->sequence)return -603;
- return {abi_prefix}_finish(&s->buffers,&s->work);
+ return {finish_entry}(&s->buffers,&s->work);
 }}
 """
     )
@@ -467,6 +501,22 @@ int {prefix}_compute(void*raw,const merlin_staged_kernel_invocation*i,unsigned s
         "source_pins_all_match": all(verdict.ok for verdict in verifications.values()),
         "source_image_association_qualified": False,
     }
+    if readonly_b is not None:
+        provenance["layout"] = {
+            **provenance["layout"],
+            "logical_b_bytes": k * n,
+            "b_pack_bytes": 0,
+            "b_storage": "borrowed exact readonly FrozenInput member",
+        }
+        provenance["readonly_operand_reuse"] = {
+            "requirement": readonly_b.record(),
+            "runtime_binding": "builder-verified FrozenInput member; removed from external caller ABI",
+            "packed_weight_allocation_bytes": 0,
+            "packed_weight_copy_bytes_per_prepare": 0,
+            "lifetime": "readonly program blob retained through all callbacks and complete joins",
+            "setup_cost_scope": "source freezing, offline packing, blob load and validation are initialization costs; not removed from accounting",
+            "alias_contract": "exact B==Bp only; no overlap with writable buffers, canonical output or metadata",
+        }
     if _format != "i8_i32" and not provenance["source_pins_all_match"]:
         (work / "source-refusal.json").write_text(
             json.dumps(provenance, indent=2) + "\n"
@@ -487,6 +537,7 @@ int {prefix}_compute(void*raw,const merlin_staged_kernel_invocation*i,unsigned s
         tuple(objects),
         {str(p.resolve()): sha256_file(p) for p in bound if p.is_file()},
         provenance,
+        **({"readonly_inputs": (readonly_b,)} if readonly_b is not None else {}),
     )
     value.verify(worker_count=worker_count)
     (work / "prepared.json").write_text(json.dumps(value.record(), indent=2) + "\n")

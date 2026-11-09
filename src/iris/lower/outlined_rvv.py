@@ -84,6 +84,9 @@ def prepare_staged_kernel(
         raise ValueError("base must bind the actual Iris compute-hart roster")
     worker_count = len(harts)
     base.verify(worker_count=worker_count)
+    readonly = getattr(base, "readonly_inputs", ())
+    if readonly and (len(readonly) != 1 or readonly[0].index != 1):
+        raise ValueError("only the sealed common-layout B lease is supported")
     slot_mask = sum(1 << slot for slot in base.worker_slots)
     physical_mask = sum(1 << harts[slot] for slot in base.worker_slots)
     if (
@@ -217,6 +220,8 @@ int {prefix}_finish(void*,const merlin_staged_kernel_invocation*);
         for leaf in leaves.values()
     )
     preparation = []
+    bp_pointer = "(void*)s->base.work.bp" if readonly else "s->base.bp"
+    bp_capacity = str(k * n) if readonly else "sizeof s->base.bp"
     for slot in range(worker_count):
         for index, job in enumerate(j for j in jobs if j["slot"] == slot):
             fn = leaves[(job["m"], job["n"])]["c_interface_symbol"]
@@ -224,7 +229,7 @@ int {prefix}_finish(void*,const merlin_staged_kernel_invocation*);
             preparation.append(f"""{{{prefix}_job*j=&s->jobs[{slot}][{index}];j->function={fn};j->last={int(job["last"])};
  const int64_t as[2]={{{mm},{k}}},bs[2]={{{k},{nn}}},cs[2]={{{mm},{nn}}},ap[2]={{1,{m}}},bp[2]={{{n},1}};
  if(merlin_prepare_strided_descriptor(s->base.at,sizeof s->base.at,1,2,{row},as,ap,&j->arguments[0])||
-    merlin_prepare_strided_descriptor(s->base.bp,sizeof s->base.bp,1,2,{col},bs,bp,&j->arguments[1])||
+    merlin_prepare_strided_descriptor({bp_pointer},{bp_capacity},1,2,{col},bs,bp,&j->arguments[1])||
     merlin_prepare_strided_descriptor(s->base.cp,sizeof s->base.cp,4,2,{row * n + col},cs,bp,&j->arguments[2]))return -702;}}
 """)
     count_initializers = "".join(
@@ -321,6 +326,10 @@ int {prefix}_compute(void*raw,const merlin_staged_kernel_invocation*i,unsigned s
         "full_model_admission": False,
         "physical_busy": None,
     }
+    if readonly:
+        provenance["common_layout_qualification"] = (
+            "same Iris At/Cp ownership and exact readonly-B lease as VME; no per-inference B allocation/copy; not best or natural-layout RVV denominator"
+        )
     bound = [
         header,
         control,
@@ -350,6 +359,7 @@ int {prefix}_compute(void*raw,const merlin_staged_kernel_invocation*i,unsigned s
         (*control_objects, *objects),
         pins,
         provenance,
+        **({"readonly_inputs": readonly} if readonly else {}),
     )
     value.verify(worker_count=worker_count)
     (work / "prepared.json").write_text(json.dumps(value.record(), indent=2) + "\n")

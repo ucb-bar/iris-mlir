@@ -93,3 +93,29 @@ The compiler-backed tests require the explicit compiler and pinned RTL
 source environment. Missing prerequisites are reported as skips, not passes.
 The script's selected dispatch is explicit and structural: model names, golden
 values and benchmark identities do not choose its behavior.
+
+### Explicit immutable operand reuse
+
+`prepare_staged_kernel(..., readonly_b=ReadonlyInput(...))` may select the
+separate readonly-B split ABI. The requirement is a generic
+`merlin.runtime.prepared_staged_kernel.ReadonlyInput` for input index 1, exact
+signed-I8 `[K,N]` shape, byte span, content SHA256 and unit alignment. The shared
+builder must bind it to an actual `FrozenInputs` blob member, with the original
+weight argument removed from the runtime caller ABI. A dynamic argument, a
+changed content/type/span, a runtime writer or unknown storage ownership refuses.
+Pointer stability and C `const` alone do not grant this capability.
+
+The provider omits its private Bp array and uses the exact readonly input as Bp.
+Only that exact alias is allowed; writable activation/output workspace and
+metadata remain disjoint. The source blob stays alive and unwritten through all
+worker callbacks, complete joins and finish. The matched RVV adapter propagates
+the same requirement and uses the same readonly K-major B. Activation packing,
+output initialization, arithmetic and output finish retain their existing role
+and numerical contracts. No content cache or automatic route is introduced.
+
+Freezing, offline weight layout conversion, blob storage/load and validation
+are initialization costs and must be reported separately from repeated
+inference. The ordinary provider continues to allocate/copy Bp. This source API
+alone establishes neither a performance benefit nor hardware correctness; a new
+linked image needs its own complete numerical, role and memory gates. Repeated
+runs are first-invocation/post-warmup observations, without a cache-cold claim.

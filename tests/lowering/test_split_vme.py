@@ -99,7 +99,12 @@ def library(tmp_path_factory):
         check=True,
     )
     lib = C.CDLL(str(so))
-    for name in ("iris_vme_split_prepare", "iris_vme_split_finish"):
+    for name in (
+        "iris_vme_split_prepare",
+        "iris_vme_split_finish",
+        "iris_vme_split_prepare_readonly_b",
+        "iris_vme_split_finish_readonly_b",
+    ):
         getattr(lib, name).argtypes = [C.POINTER(Buffers), C.POINTER(Work)]
         getattr(lib, name).restype = C.c_int
     lib.iris_vme_split_validate_work.argtypes = [C.POINTER(Work)]
@@ -252,3 +257,111 @@ def test_plan_refuses_unknown_or_overflowing_geometry(field, value):
     args[field] = value
     with pytest.raises(ValueError):
         workspace_plan(**args)
+
+
+@pytest.mark.parametrize("mask", [1, 2, 3])
+@pytest.mark.parametrize("shape", [(1, 1, 1), (3, 65, 17), (32, 128, 64)])
+def test_explicit_readonly_b_reuses_exact_input_without_writes(library, mask, shape):
+    s, w, arrays, a, b = fixture(*shape, mask=mask)
+    C.c_uint.in_dll(library, "iris_vme_split_test_hart").value = 2
+    s.bp, s.bp_bytes = s.b, s.b_bytes
+    assert library.iris_vme_split_prepare(C.byref(s), C.byref(w)) == 4
+    for sequence in (1, 2, 3):
+        s.sequence = sequence
+        C.memset(arrays[5].address, 0xCC, arrays[5].n)
+        assert library.iris_vme_split_prepare_readonly_b(C.byref(s), C.byref(w)) == 0
+        assert w.bp == s.b and arrays[3].bytes() == a.T.copy().tobytes()
+        assert arrays[5].bytes() == bytes(arrays[5].n)
+        expected = (a.astype(np.int64) @ b.astype(np.int64)).astype("<i4").tobytes()
+        C.memmove(arrays[5].address, expected, len(expected))
+        assert library.iris_vme_split_finish_readonly_b(C.byref(s), C.byref(w)) == 0
+        assert arrays[2].bytes() == expected and arrays[1].bytes() == b.tobytes()
+        assert arrays[4].bytes() == bytes([0x5A]) * arrays[4].n
+        for array in arrays:
+            array.check()
+
+
+@pytest.mark.parametrize(
+    "bad", ["partial", "distinct", "capacity", "at", "cp", "output", "work", "buffers"]
+)
+def test_readonly_b_alias_exemption_is_exact_and_transactional(library, bad):
+    s, w, arrays, _, _ = fixture(3, 65, 17)
+    C.c_uint.in_dll(library, "iris_vme_split_test_hart").value = 2
+    s.bp, s.bp_bytes = s.b, s.b_bytes
+    if bad == "partial":
+        s.bp = s.b + 16
+    elif bad == "distinct":
+        s.bp = arrays[4].address
+    elif bad == "capacity":
+        s.bp_bytes -= 1
+    elif bad == "at":
+        s.at = s.b
+    elif bad == "cp":
+        s.cp = s.b
+    elif bad == "output":
+        s.output = s.b
+    elif bad == "work":
+        s.b = s.bp = C.addressof(w)
+    else:
+        s.b = s.bp = C.addressof(s)
+    before = [a.bytes() for a in arrays] + [bytes(w)]
+    assert library.iris_vme_split_prepare_readonly_b(C.byref(s), C.byref(w)) != 0
+    assert [a.bytes() for a in arrays] + [bytes(w)] == before
+
+
+def test_readonly_b_page_is_never_written(tmp_path):
+    """mprotect catches even same-byte writes, unlike an after-call checksum."""
+    cc = shutil.which("cc")
+    if not cc:
+        pytest.skip("host C compiler required")
+    src = source_files()
+    source = tmp_path / "readonly.c"
+    source.write_text(r"""
+#define _GNU_SOURCE
+#include "vme_split.h"
+#include <assert.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <unistd.h>
+unsigned iris_vme_split_test_hart=2;
+static _Alignas(64) int8_t a[3*17],at[3*17];
+static _Alignas(64) int32_t cp[3*65],out[3*65];
+int main(void){
+ size_t page=(size_t)sysconf(_SC_PAGESIZE);
+ int8_t*b=mmap(0,page,PROT_READ|PROT_WRITE,MAP_PRIVATE|MAP_ANONYMOUS,-1,0);
+ assert(b!=MAP_FAILED);for(size_t j=0;j<17*65;j++)b[j]=(int8_t)j;
+ assert(!mprotect(b,page,PROT_READ));
+ iris_vme_split_buffers s={.a=a,.b=b,.output=out,.at=at,.bp=b,.cp=cp,
+ .a_bytes=sizeof a,.b_bytes=17*65,.output_bytes=sizeof out,.at_bytes=sizeof at,
+ .bp_bytes=17*65,.cp_bytes=sizeof cp,.m=3,.n=65,.k=17,.tile_edge=32,
+ .alignment_bytes=16,.sequence=1,.worker_mask=3};iris_vme_split_work w;
+ for(size_t generation=1;generation<4;generation++){
+  s.sequence=generation;assert(!iris_vme_split_prepare_readonly_b(&s,&w));
+  for(size_t j=0;j<3*65;j++)cp[j]=(int32_t)(generation+j);
+  assert(!iris_vme_split_finish_readonly_b(&s,&w));
+  assert(!memcmp(out,cp,sizeof cp));for(size_t j=0;j<17*65;j++)assert(b[j]==(int8_t)j);
+ }assert(!munmap(b,page));return 0;
+}
+""")
+    exe = tmp_path / "readonly"
+    subprocess.run(
+        [
+            cc,
+            "-std=c11",
+            "-O2",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-DIRIS_VME_SPLIT_HOST_TEST",
+            "-I",
+            str(src["vme_split.h"].parent),
+            str(source),
+            str(src["vme_split_prepare.c"]),
+            "-o",
+            str(exe),
+        ],
+        check=True,
+        capture_output=True,
+        timeout=30,
+    )
+    subprocess.run([str(exe)], check=True, capture_output=True, timeout=30)
