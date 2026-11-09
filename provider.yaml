@@ -6,4 +6,4 @@ role: support
 extends:
   target: rvv
   repo: https://github.com/ucb-bar/rvv-mlir.git
-  commit: cd8b25f73df0a9876bb417d00ffe5e8d7a5d3dc3
+  commit: 7d486a386a3df60cd0c87edd41e7817d6d5acd30

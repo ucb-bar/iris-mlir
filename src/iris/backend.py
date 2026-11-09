@@ -142,3 +142,17 @@ def kernel_header_facts(*, unit, config):
 def generated_kernel(*, unit, config, max_k=None):
     """``(C source, function)`` of the generated kernel, for Merlin's kernel-test."""
     return vme_shim.generated_kernel(unit=unit, config=config)
+
+
+def staged_kernel_api():
+    """Explicit split prepare/compute/finish capability; no automatic graph policy."""
+    from .lower import outlined_vme
+
+    return outlined_vme
+
+
+def staged_rvv_kernel_api():
+    """Explicit same-layout comparator using the inherited generic RVV leaves."""
+    from .lower import outlined_rvv
+
+    return outlined_rvv

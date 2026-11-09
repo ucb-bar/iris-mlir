@@ -122,6 +122,41 @@ needed to finish it.
 
 ## Use
 
+### Explicit outlined split kernels
+
+`iris.backend.staged_kernel_api()` exposes a separate opt-in builder for one
+closed, canonical, zero-seeded signed-I8 × signed-I8 → wrapping-I32 tensor MAC.
+It proves the scalar dataflow, types, layout and unflagged arithmetic; equal
+shapes or function/provenance names alone do not admit a kernel. Unknown
+contracts, nonzero accumulators, unsigned products and additional live work
+refuse. The ordinary integrated-packing matrix provider remains unchanged.
+
+With a Merlin version exposing `PreparedStagedKernel`, prepare an explicitly
+selected canonical kernel through
+`staged_kernel_api().prepare_staged_kernel(module, work, unit=..., config=...,
+roles=..., worker_slots=..., cc=..., controller_cflags=..., compute_cflags=...,
+runtime_include=..., prefix=...)`. Pass its record to
+`build_outlined_program(..., prepared_staged_kernels={dispatch_index: prepared})`.
+The caller supplies the source-selected dispatch and common/compute ISA flags;
+there is no automatic CLI routing or performance heuristic in this API.
+
+The builder derives the header and workspace geometry through the existing
+unit contract and reuses `vme_split_prepare`, `vme_split_compute` and
+`vme_split_finish`, including the registered kernel bodies. State size/alignment
+come from an actual target-C compiler observation. Every pack buffer and metadata
+object stays in the declared lifetime arena; a byte-bound record supplies no
+independent hardware or numerical certification.
+
+Preparation/finish require controller hart 2. Compute requires pinned harts 0/1;
+the platform must call Zephyr `iris_vme_enable()` once on each selected worker
+before ARM with the Iris-aware context option enabled. Setting architectural MS
+alone does not establish context preservation, and migration is not supported.
+Source/image association and real device completion require separate gates.
+The default also requires compiler-observed scalar controller packing. Controller
+flags enabling the source's RVV packing branch refuse unless
+`allow_vector_controller_packing=True` explicitly selects that unqualified
+experiment. This opt-in does not establish RVV packing context/completion safety.
+
 ```sh
 cd merlin
 export MERLIN_CHIPYARD_IRIS=/path/to/chipyard-iris   # iris-cy, with generators/saturn and generators/rocket-chip
