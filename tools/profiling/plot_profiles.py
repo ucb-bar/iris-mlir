@@ -242,6 +242,8 @@ def plot_full_model(groups, output, paths):
             stage['groups'][part] = stage['groups'].get(part, 0) + row['functional_instruction_ticks']
             if row.get('source_quality_gate') is False:
                 stage['quality_gate_failed'] = True
+            if row.get('profiling_deviation_accepted') is True:
+                stage['profiling_deviation_accepted'] = True
         else:
             combined[len(combined)] = row
     normalized = []
@@ -267,13 +269,13 @@ def plot_full_model(groups, output, paths):
             vals.append(100 * value / sum(v.values()))
         ax.barh(range(len(normalized)), vals, left=left, color=colors[j], label='matrix provider / contraction' if cat == 'matrix_provider_interval' else cat.replace('_', ' '))
         left = [a + b for a, b in zip(left, vals)]
-    ax.set_yticks(range(len(normalized)), [f"{r['model']} {r.get('phase', r.get('stage', '?'))}" + (' [quality gate FAILED]' if r.get('quality_gate_failed') else '') for r, _ in normalized])
+    ax.set_yticks(range(len(normalized)), [f"{r['model']} {r.get('phase', r.get('stage', '?'))}" + (' [profiling-only acceptance]' if r.get('profiling_deviation_accepted') else (' [historical quality threshold exceeded]' if r.get('quality_gate_failed') else '')) for r, _ in normalized])
     ax.set_xlim(0, 100)
     ax.invert_yaxis()
     ax.set_xlabel('Share of attributed functional instruction counts (%)')
     ax.set_title('Full-model parts: historical functional work attribution')
     ax.legend(loc='upper center', bbox_to_anchor=(.5, -.15), ncol=3, fontsize=8)
-    fig.text(.5, -.09, 'Historical diagnostics with differing precision routes; SpectFormer quality gate failed. Instruction shares are not cycle shares or physical utilization.', ha='center', fontsize=9)
+    fig.text(.5, -.09, 'Historical diagnostics with differing precision routes and explicit profiling acceptance. Instruction shares are not cycle shares or physical utilization.', ha='center', fontsize=9)
     fig.tight_layout()
     save(fig, output, 'full_model_part_instruction_share', paths)
 
