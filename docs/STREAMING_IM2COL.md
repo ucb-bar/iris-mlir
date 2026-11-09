@@ -12,7 +12,7 @@ export MERLIN_TARGET_PATH="$PWD:$PWD/base/rvv-mlir"
 export MERLIN_SUPPORT_PINS="$PWD/contracts/streaming_support_pins.json"
 ```
 
-This feature pins RVV commit `250e93e726f373810776bd5113939e51c4162cad`.
+This feature pins RVV commit `f14004889757a39379e55280ed806a99aa9ed8d7`.
 The explicit development manifest satisfies Merlin's single-base check while
 leaving its global support pins unchanged. The RVV dependency is published on `ucb-bar/rvv-mlir`
 branch `handwritten-implementation`. Initialize the pinned submodule before

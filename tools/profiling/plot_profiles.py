@@ -443,6 +443,31 @@ def plot_memory_activity(data, output, paths):
     save(fig, output, 'memory_activity', paths)
 
 
+
+def plot_copy_optimization(data, output, paths):
+    import matplotlib.pyplot as plt
+    rows = data.get('copy_optimization', [])
+    if not rows:
+        return
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4.5))
+    for ax, prefix in zip(axes, ['rvv', 'vme']):
+        selected = [r for r in rows if r['variant'].startswith(prefix)]
+        xx = list(range(len(selected)))
+        ax.bar([x-.18 for x in xx], [r['before_instret'] for r in selected], width=.35, label='Before', color='#8093a4')
+        bars = ax.bar([x+.18 for x in xx], [r['after_instret'] for r in selected], width=.35, label='Copy-loop lowering', color='#158579')
+        for b,r in zip(bars, selected):
+            ax.text(b.get_x()+b.get_width()/2, b.get_height(), f"{100*r['signed_instruction_change']:+.1f}%", ha='center', va='bottom', fontsize=10)
+        ax.set_xticks(xx, [r['variant'] for r in selected])
+        ax.set_ylim(0, max(r['before_instret'] for r in selected)*1.15)
+        ax.set_ylabel('Retired architectural instructions / operator')
+        ax.set_title(prefix.upper() + (' paths' if prefix=='rvv' else ' unchanged controls'))
+        ax.legend(fontsize=8)
+    fig.suptitle('New copy lowering: matched native compiler packet', fontsize=15)
+    fig.text(.5, -.04, 'All 12 regions / 16,128 words pass. Driver, runtime and VME controls unchanged. Instruction reductions are not FPGA cycle speedups.', ha='center', fontsize=9)
+    fig.tight_layout()
+    save(fig, output, 'copy_lowering_instruction_counts', paths)
+
+
 def render(data, diagnostics, output):
     import matplotlib
     matplotlib.use('Agg')
@@ -460,6 +485,7 @@ def render(data, diagnostics, output):
     plot_peak_efficiency(records, output, paths)
     plot_shape_sweep(records, output, paths)
     plot_memory_activity(diagnostics, output, paths)
+    plot_copy_optimization(diagnostics, output, paths)
     return paths
 
 

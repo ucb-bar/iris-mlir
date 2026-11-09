@@ -110,13 +110,13 @@
       "path": "docs/STREAMING_IM2COL.md",
       "source": "Iris provider authored; RVV panel API @250e93e726f373810776bd5113939e51c4162cad; existing matrix unit contract/derived geometry",
       "change": "Opt-in signed-I8 streaming window schedule and strict tests; no default, hardware timing or physical utilization claim",
-      "sha256": "f9854691ee099baa09be77e307cfbe5a7205ef9888eafff0a1a9c35403b34d2e"
+      "sha256": "d77495ac00e03fdc962aea13604f9695ba29720ec4a90418b2a8caf57c27602b"
     },
     {
       "path": "contracts/streaming_support_pins.json",
       "source": "Iris provider authored; RVV panel API @250e93e726f373810776bd5113939e51c4162cad; existing matrix unit contract/derived geometry",
       "change": "Opt-in signed-I8 streaming window schedule and strict tests; no default, hardware timing or physical utilization claim",
-      "sha256": "f6c093ac3815b3c6c06f498c3873f40fdca2076e0c4a7a83b05867fa272cf998"
+      "sha256": "dcfa140935870b7dc354b1e7f8a2cb716428142fc8f7515c60ebe5539ee05b68"
     },
     {
       "path": "kernels/vme_gemm_1x2_reuse.c",

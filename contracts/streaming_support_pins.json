@@ -7,8 +7,8 @@
       "target": "rvv",
       "repo": "https://github.com/ucb-bar/rvv-mlir.git",
       "branch": "handwritten-implementation",
-      "commit": "250e93e726f373810776bd5113939e51c4162cad",
-      "tree": "0db07839a095452d61d5d2d02d501dd24083c337"
+      "commit": "f14004889757a39379e55280ed806a99aa9ed8d7",
+      "tree": "ed45197fe8747722b74c084cb8f345e783a2c915"
     },
     "packages": []
   }

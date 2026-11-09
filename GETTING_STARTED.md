@@ -54,7 +54,7 @@ export MERLIN_SUPPORT_PINS="$IRIS_MLIR/contracts/streaming_support_pins.json"
 ```
 
 This feature revision composes against RVV commit
-`250e93e726f373810776bd5113939e51c4162cad`. Its checked project-local manifest
+`f14004889757a39379e55280ed806a99aa9ed8d7`. Its checked project-local manifest
 selects that exact commit and tree for this explicit Iris checkout. Merlin's
 older global default can remain at its own pin; the manifest does not disable
 verification or change other shells. Both repositories must contain the
