@@ -38,13 +38,15 @@
       "path": "src/iris/lower/vme_shim.py",
       "source": "this package",
       "change": "VME contract, encoding, and object builder extracted from Merlin into this package; shared descriptor ABI remains in Merlin",
-      "sha256": "b0f0a6575616b7882b0c77cc97b385c2179e956f6b931427fd56502567a2716e"
+      "sha256": "daddda2bdb5b90eac7daf779ba687661ee55baae454251cb8c1299c89d210f07",
+      "previous_sha256": "b0f0a6575616b7882b0c77cc97b385c2179e956f6b931427fd56502567a2716e"
     },
     {
       "path": "src/iris/backend.py",
       "source": "this package",
-      "change": "plugin adapter for Merlin MatrixRouting, formatted without behavior change",
-      "sha256": "99f00481a5cf9b2670a25489750a682657ca7846cdb4f85f3b5e2303da395e36"
+      "change": "plugin adapter for Merlin MatrixRouting, formatted without behavior change; migrated shared compiler ownership imports and explicit pinned composition",
+      "sha256": "3afc362bdd5154d7291d8834622e8e44e83b82bad1cca129329d5c5398d2de0f",
+      "previous_sha256": "99f00481a5cf9b2670a25489750a682657ca7846cdb4f85f3b5e2303da395e36"
     },
     {
       "path": "kernels/kernels.yaml",
@@ -67,8 +69,9 @@
     {
       "path": "src/iris/composition.py",
       "source": "this package",
-      "change": "versioned accelerator extension adapter over the inherited RVV backend",
-      "sha256": "62ef32f22d620df25795c0d73f0310050c9d5575d7aa6ebbc5f5cffba422658a"
+      "change": "versioned accelerator extension adapter over the inherited RVV backend; migrated shared compiler ownership imports and explicit pinned composition",
+      "sha256": "db1b17b47f41986e1ab728f70f4de8d098d32683f7e3ddc5685d0f20b3a70a81",
+      "previous_sha256": "62ef32f22d620df25795c0d73f0310050c9d5575d7aa6ebbc5f5cffba422658a"
     },
     {
       "path": "backend.toml",
@@ -93,6 +96,20 @@
       "source": "this package",
       "change": "VME ABI rewrite of selected contractions",
       "sha256": "34bb61f4d441e961189491800aa05efef5ce159ba21bd737802c3f150acfd090"
+    },
+    {
+      "path": "service.py",
+      "source": "active refactor/architecture implementation",
+      "change": "Ordinary provider adoption and responsibility-based owner migration; no inherited execution qualification",
+      "sha256": "790cdc00a528e810a5d2cd2e2ef5cc32feab2f06c959dc8333dca236fe06b37c",
+      "previous_sha256": "43b0a985ee79e87fc53a344ec85046311d285dadd89b2872fde17557473cc255"
+    },
+    {
+      "path": "src/iris/lower/object.py",
+      "source": "active refactor/architecture implementation",
+      "change": "Ordinary provider adoption and responsibility-based owner migration; no inherited execution qualification",
+      "sha256": "e43da028e50600140b6f5fee746151cae59e136e04ead957819e068544652685",
+      "previous_sha256": "ba6911907e8967e9ea9583ef280b20924e7cb03fd38785ba7fd9bc9cfad46c5a"
     }
   ],
   "generated": {

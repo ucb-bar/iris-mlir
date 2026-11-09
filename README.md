@@ -1,5 +1,12 @@
 # iris-mlir
 
+The refactor consumes Merlin's public `compiler.backend.composition` and
+`compiler.backend.proposal` interfaces. Composition validates the exact RVV
+submodule in `base/rvv-mlir`; initialize it with `git submodule update --init`.
+`backend.toml` declares the VME route, while instruction emission remains under
+`src/iris/lower/`. Existing root plugin entrypoints retain their call signatures.
+Board APIs receive the explicit `boards.yaml` path. These contracts do not certify execution.
+
 Merlin support for **Iris** (chipyard `iris-cy`, `IrisConfig`). This repository is a layer on top of
 [`rvv-mlir`](https://github.com/ucb-bar/rvv-mlir). It inherits all of RVV and adds Iris's configuration,
 its boards, and its **VME/Xsfmm matrix unit**.
@@ -229,3 +236,94 @@ MERLIN_TARGET_PATH=base/rvv-mlir merlin-target-compose . --check     # is the ge
 Changes that belong to every RVV chip go to rvv-mlir itself (commit and push there). Changes for this chip only go
 in `contracts/overlay.yaml` (use `replace:` / `remove:` to override a base fact). To move to a newer base:
 `git -C base/rvv-mlir checkout <sha>`, set `extends.commit` to the same sha, run `merlin-target-compose .`, commit.
+
+
+## Installed prepared contraction service
+
+`pip install .` installs the `merlin.backends:iris` provider. This bounded
+route uses the same selector, contraction rewrite and matrix object builder as
+`matrix_lowering.py`; it does not require or copy the RVV submodule. The existing
+whole-model plugin composition still validates its explicitly pinned RVV base.
+Open `service.py` for chip contract selection and the existing target callbacks.
+Merlin `compiler/lower/prepared.py` owns shared option validation, rewrite/object
+orchestration and ordinary compilation records; chip implementations remain here.
+
+```python
+from merlin.api import compile
+from merlin.compiler.request import Source, CompileOptions
+
+result = compile(Source(prepared_text, kind="upstream-mlir"),
+    backend="iris", output="out/matrix", options=CompileOptions(parameters={
+        "iris.unit": "saturn_vme",
+        "iris.config": "IrisConfig",  # select your actual RTL configuration
+        "iris.emit": "object",
+        "iris.cc": "/absolute/path/to/riscv64-unknown-elf-gcc",
+        "iris.cflags": ["-O2", "-march=<selected-ISA>", "-mabi=<selected-ABI>"],
+    }))
+```
+
+The selected contract requires its external chip/RTL sources and hardware pin
+inventory, including configuration declarations. Geometry and instruction words
+are derived and cross-checked; they are never supplied as guessed constants.
+`iris.emit=prepared-ir` omits compiler options and returns rewritten partial IR,
+signatures and a receipt. Object emission additionally needs an explicit C
+compiler and target flags. Neither mode requires LLVM emission. Both refuse
+inputs with no admitted contractions. No model capture or quantization occurs.
+
+The partial IR retains unrouted operations and calls to the matrix shim. The
+object contains that shim and target kernel; CPU/RVV lowering, ABI admission,
+linking and the selected platform remain separate obligations. These products
+are not executable images. No platform, hart scheduling, simulator, hardware
+execution or numerical qualification is established by this service. Existing
+handwritten delivery and verification entrypoints remain available.
+
+### Explicit simulator runtime
+
+The ordinary runtime accepts an already linked ELF, independently of compilation.
+After installing this OOT package, construct its runner explicitly:
+
+```python
+from pathlib import Path
+from merlin.api import Deployment, run
+from merlin.runtime.service import RunOptions
+from merlin_iris.src.iris.runtime import IrisRuntime
+
+# Use the actual saved image's common ISA, ABI, physical harts and DRAM.
+deployment = Deployment(
+    "my-iris-system", "baremetal", "rv64gcv_zfh_zvfh", "lp64d", 3,
+    dram_base=0x80000000, memory_bytes=4 << 30,
+)
+runner = IrisRuntime(
+    simulator_root=Path("/absolute/separate/iris-simulator-source"),
+    manifest=Path("/absolute/native-build/source_compute/manifest.json"),
+    deployment=deployment, matrix_harts=(0, 1),
+    empirical_timing=True, allow_experimental_timing=True,
+)
+result = run(Path("/absolute/image.elf"), runner=runner,
+             options=RunOptions(deployment=deployment, timeout=600))
+```
+
+`simulator_root` is a separately selected checkout of the upstream Iris package
+at `ffcb1b113295bb7831142f49b745060cf6ff6885`. Its exact simulator admission
+adapter and release index must match the installed `runtime-data/selection.json`.
+The [upstream simulator guide](https://github.com/ucb-bar/iris-mlir/blob/ffcb1b113295bb7831142f49b745060cf6ff6885/simulator/README.md)
+describes its separately maintained native fork, build dependencies and frozen
+archive. This compiler wheel includes only the release selection data; it neither
+embeds nor builds that independent simulator. Missing native/source artifacts or
+changed inputs refuse. The original frozen descriptors retain their absolute
+workspace identities. A new native build requires its own admitted descriptor.
+
+All physical harts remain present; `matrix_harts` selects only matrix workers.
+The common ISA must be admitted on every physical hart, while the selected
+descriptor supplies each hart's exact ISA and memory map. For Zephyr, supply the
+image's `platform="zephyr"` contract and the distinct `source_os` descriptor.
+The runner does not infer image worker placement or supply missing linked-image
+qualification. Guest process arguments and non-POSIX execution hosts refuse.
+
+The result records the actual argv, return code, stdout/stderr and before/after
+execution-input hashes. Selected failures and timeouts never retry on legacy
+Spike. Empirical timing and both explicit opt-ins remain mandatory, and timing
+accuracy and whole-model certification remain false. Admission/transport checks
+use synthetic launchers; real custom-simulator execution through this new
+ordinary adapter has not yet been qualified. Compilation, numerical verification
+and hardware execution retain their separate obligations.

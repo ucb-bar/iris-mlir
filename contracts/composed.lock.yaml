@@ -4,8 +4,8 @@ provider_id: iris-support
 base:
   target: rvv
   provider_id: rvv-support
-  revision: f33a253431c64f8fed8aaad4bc673cfde82101c4
-  pinned: f33a253431c64f8fed8aaad4bc673cfde82101c4
+  revision: caadf2c1f1c815819f2190eb717da2a7de5994d5
+  pinned: caadf2c1f1c815819f2190eb717da2a7de5994d5
   repo: https://github.com/ucb-bar/rvv-mlir.git
   contract_sha256: 34228f1bdf5b22b4017bbe8df36852eac99edb6d488d58bf69ac971a0ec27b06
   not_inherited:

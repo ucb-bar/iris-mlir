@@ -10,7 +10,7 @@ import yaml
 
 from merlin.common.schemas import validate as validate_schema
 from merlin.runtime import boards
-from merlin.targetgen import provider_compose
+from merlin.compiler.backend import composition as provider_compose
 from merlin.targetgen.plugins import validate
 from merlin.targetgen.providers import ProviderRole, read_provider
 
@@ -33,13 +33,13 @@ def test_identity_layering_and_contract():
 
 
 def test_effective_contract_is_fresh_against_the_pinned_base():
-    fresh, comp = provider_compose.materialize(ROOT, check=True)
+    fresh, comp = provider_compose.materialize(ROOT, check=True, bases=[ROOT / "base/rvv-mlir"])
     assert fresh, f"stale: run `merlin-target-compose {ROOT}` (base {comp.base.root} @ {comp.base_revision})"
     assert comp.base_revision == read_provider(ROOT).extends.commit
 
 
 def test_boards_describe_irisconfig():
-    rtl = boards.load_boards(str(ROOT))["iris_rtl"]
+    rtl = boards.load_boards(ROOT / "boards.yaml")["iris_rtl"]
     assert (rtl.harts, rtl.vector_harts, rtl.vlen) == (3, 3, 256)
     assert (rtl.dram_base, rtl.dram_bytes) == (0x80000000, 4 << 30)
     # The Rocket DMA hart has a vector unit and no matrix unit.

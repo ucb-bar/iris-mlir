@@ -1,0 +1,8 @@
+include *.py *.toml provider.yaml boards.yaml
+recursive-include src *.py
+recursive-include src/iris/runtime-data *.json
+recursive-include contracts *.yaml
+recursive-include kernels *.yaml *.c *.h
+prune base
+prune evidence
+prune tests

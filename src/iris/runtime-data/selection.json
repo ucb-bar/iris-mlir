@@ -1,0 +1,11 @@
+{
+  "schema": "iris.runtime_source_selection.v1",
+  "repository": "https://github.com/ucb-bar/iris-mlir.git",
+  "commit": "ffcb1b113295bb7831142f49b745060cf6ff6885",
+  "adapter": "src/iris/simulator.py",
+  "adapter_sha256": "04215155069d731723b22f4e3c314c7783219e44dbbc0e671f8e95df21decf5b",
+  "release": "simulator/release.json",
+  "release_sha256": "4fcf82035fb19ca380130ab2ea753757d765644ddac304817dca35b3b6f371ec",
+  "native_submodule": "simulator/spike-model",
+  "native_commit": "4f69efc8ff9ae3282c84b696c781b0e4faac909b"
+}

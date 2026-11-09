@@ -7,7 +7,7 @@ adapter certifies nothing by itself; the gates are the build's audit, the twin a
 
 from pathlib import Path
 
-from merlin.targetgen.component_composition import validate_backend_composition
+from merlin.compiler.backend.composition import validate_backend_composition
 
 from . import pipelines, placement
 from .lower import vme_shim
@@ -21,7 +21,7 @@ shim = vme_shim
 
 
 def load_contract(unit, *, path=None):
-    validate_backend_composition(ROOT)
+    validate_backend_composition(ROOT, bases=[ROOT / "base/rvv-mlir"])
     return vme_shim.load_contract(unit, path=path)
 
 

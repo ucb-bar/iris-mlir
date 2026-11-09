@@ -1,3 +1,25 @@
+[build-system]
+requires = ["setuptools>=70.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "iris-mlir"
+version = "0.1.0"
+description = "Iris prepared contraction and matrix object provider for Merlin"
+requires-python = ">=3.12"
+dependencies = ["merlin>=0.0.1", "xdsl>=0.68,<0.76", "numpy", "pyyaml"]
+
+[project.entry-points."merlin.backends"]
+iris = "merlin_iris.service"
+
+[tool.setuptools]
+packages = ['merlin_iris', 'merlin_iris.src', 'merlin_iris.src.iris', 'merlin_iris.src.iris.lower', 'merlin_iris.src.iris.transforms']
+package-dir = { merlin_iris = "." }
+include-package-data = false
+
+[tool.setuptools.package-data]
+merlin_iris = ["provider.yaml", "backend.toml", "boards.yaml", "contracts/*.yaml", "kernels/*.yaml", "kernels/**/*.c", "kernels/**/*.h", "src/iris/runtime-data/*.json"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
