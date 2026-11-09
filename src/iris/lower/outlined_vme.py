@@ -168,6 +168,40 @@ def prepare_staged_kernel(
     prefix,
     allow_vector_controller_packing=False,
 ):
+    """Prepare the existing explicit signed-I8/I32 implementation."""
+    return _prepare_staged_kernel(
+        module,
+        work,
+        unit=unit,
+        config=config,
+        roles=roles,
+        worker_slots=worker_slots,
+        cc=cc,
+        controller_cflags=controller_cflags,
+        compute_cflags=compute_cflags,
+        runtime_include=runtime_include,
+        prefix=prefix,
+        allow_vector_controller_packing=allow_vector_controller_packing,
+        _format="i8_i32",
+    )
+
+
+def _prepare_staged_kernel(
+    module,
+    work,
+    *,
+    unit,
+    config,
+    roles,
+    worker_slots,
+    cc,
+    controller_cflags,
+    compute_cflags,
+    runtime_include,
+    prefix,
+    allow_vector_controller_packing=False,
+    _format,
+):
     """Prepare a byte-bound staged implementation; explicit selection never falls back."""
     from merlin.common import provenance as source_provenance
     from merlin.common.digest import sha256_file
@@ -176,7 +210,25 @@ def prepare_staged_kernel(
     from merlin.runtime.prepared_staged_kernel import PreparedStagedKernel
 
     from .. import backend
-    from . import split_vme
+
+    if _format == "i8_i32":
+        from . import split_vme
+
+        admit = admit_signed_gemm
+        abi_prefix, abi_header = "iris_vme_split", "vme_split.h"
+        storage_type, accumulator_type = "int8_t", "int32_t"
+        numeric_contract = "closed zero-seeded signedI8×signedI8 wrappingI32"
+    elif _format == "finite_e4m3_f32":
+        from . import split_fp8 as split_vme
+        from .outlined_fp8 import admit_fp8_gemm as admit
+
+        if allow_vector_controller_packing:
+            raise ValueError("FP8 source foundation requires scalar controller packing")
+        abi_prefix, abi_header = "iris_vme_fp8_split", "vme_fp8_split.h"
+        storage_type, accumulator_type = "uint8_t", "float"
+        numeric_contract = "positive-zero finite E4M3FN×E4M3FN ordered FP32 accumulation RNE; runtime domain/frm checks"
+    else:
+        raise ValueError("unknown sealed staged numeric format")
 
     if not prefix.isascii() or not prefix.isidentifier():
         raise ValueError("C-safe explicit prefix required")
@@ -186,7 +238,7 @@ def prepare_staged_kernel(
         )
     harts, slot_mask, mask = worker_binding(roles, worker_slots)
     worker_count = len(harts)
-    m, n, k = admit_signed_gemm(module)
+    m, n, k = admit(module)
     layout = split_vme.from_config(m, n, k, unit=unit, config=config, worker_mask=mask)
     work = Path(work).resolve()
     work.mkdir(parents=True, exist_ok=False)
@@ -206,13 +258,13 @@ def prepare_staged_kernel(
     header.write_text(f"""#ifndef {prefix.upper()}_H
 #define {prefix.upper()}_H
 #include "merlin_staged_kernel.h"
-#include "kernel/vme_split.h"
+#include "kernel/{abi_header}"
 typedef struct {{
- iris_vme_split_buffers buffers;
- iris_vme_split_work work;
+ {abi_prefix}_buffers buffers;
+ {abi_prefix}_work work;
  size_t completed[{worker_count}];
- _Alignas({align}) int8_t at[{m * k}],bp[{k * n}];
- _Alignas({align}) int32_t cp[{m * n}];
+ _Alignas({align}) {storage_type} at[{m * k}],bp[{k * n}];
+ _Alignas({align}) {accumulator_type} cp[{m * n}];
 }} {state};
 int {prefix}_prepare(void*,const merlin_staged_kernel_invocation*);
 int {prefix}_compute(void*,const merlin_staged_kernel_invocation*,unsigned);
@@ -237,12 +289,12 @@ static int valid(const merlin_staged_kernel_invocation*i){{
 int {prefix}_prepare(void*raw,const merlin_staged_kernel_invocation*i){{
  if(!raw||!valid(i))return -601;{state}*s=raw;
  for(unsigned slot=0;slot<{worker_count};slot++)s->completed[slot]=0;
- s->buffers=(iris_vme_split_buffers){{.a=i->data[0],.b=i->data[1],.output=i->data[2],.at=s->at,.bp=s->bp,.cp=s->cp,.a_bytes=i->capacities[0],.b_bytes=i->capacities[1],.output_bytes=i->capacities[2],.at_bytes=sizeof s->at,.bp_bytes=sizeof s->bp,.cp_bytes=sizeof s->cp,.m={m},.n={n},.k={k},.tile_edge={te},.alignment_bytes={align},.sequence=i->sequence,.worker_mask={mask}}};
- return iris_vme_split_prepare(&s->buffers,&s->work);
+ s->buffers=({abi_prefix}_buffers){{.a=i->data[0],.b=i->data[1],.output=i->data[2],.at=s->at,.bp=s->bp,.cp=s->cp,.a_bytes=i->capacities[0],.b_bytes=i->capacities[1],.output_bytes=i->capacities[2],.at_bytes=sizeof s->at,.bp_bytes=sizeof s->bp,.cp_bytes=sizeof s->cp,.m={m},.n={n},.k={k},.tile_edge={te},.alignment_bytes={align},.sequence=i->sequence,.worker_mask={mask}}};
+ return {abi_prefix}_prepare(&s->buffers,&s->work);
 }}
 int {prefix}_finish(void*raw,const merlin_staged_kernel_invocation*i){{
  if(!raw||!valid(i))return -602;{state}*s=raw;if(s->work.sequence!=i->sequence)return -603;
- return iris_vme_split_finish(&s->buffers,&s->work);
+ return {abi_prefix}_finish(&s->buffers,&s->work);
 }}
 """
     )
@@ -251,9 +303,9 @@ int {prefix}_finish(void*raw,const merlin_staged_kernel_invocation*i){{
         common
         + f"""
 int {prefix}_compute(void*raw,const merlin_staged_kernel_invocation*i,unsigned slot){{
- if(!raw||!valid(i)||slot>={worker_count}||!(i->selected_worker_mask&(1u<<slot))||iris_vme_split_hart()!=i->worker_harts[slot])return -604;
+ if(!raw||!valid(i)||slot>={worker_count}||!(i->selected_worker_mask&(1u<<slot))||{abi_prefix}_hart()!=i->worker_harts[slot])return -604;
  {state}*s=raw;if(s->work.sequence!=i->sequence)return -605;
- return iris_vme_split_compute(&s->work,&s->completed[slot]);
+ return {abi_prefix}_compute(&s->work,&s->completed[slot]);
 }}
 """
     )
@@ -306,9 +358,27 @@ int {prefix}_compute(void*raw,const merlin_staged_kernel_invocation*i,unsigned s
         )
     objects = []
     for source, flags, name in [
-        (kernel / "vme_split_prepare.c", controller_cflags, "split_prepare"),
+        (
+            kernel
+            / (
+                "vme_split_prepare.c"
+                if _format == "i8_i32"
+                else "vme_fp8_split_prepare.c"
+            ),
+            controller_cflags,
+            "split_prepare",
+        ),
         (control, controller_cflags, "controller_bridge"),
-        (kernel / "vme_split_compute.c", compute_cflags, "split_compute"),
+        (
+            kernel
+            / (
+                "vme_split_compute.c"
+                if _format == "i8_i32"
+                else "vme_fp8_split_compute.c"
+            ),
+            compute_cflags,
+            "split_compute",
+        ),
         (compute, compute_cflags, "compute_bridge"),
     ]:
         obj = work / (name + ".o")
@@ -318,11 +388,13 @@ int {prefix}_compute(void*raw,const merlin_staged_kernel_invocation*i,unsigned s
     (work / "selected-source.mlir").write_text(source_text)
     contract = backend.load_contract(unit)
     derived = backend.derive_encodings(contract)
+    additional = [] if _format == "i8_i32" else split_vme.additional_sources(contract)
     verifications = {
         contract.pin: source_provenance.verify(
             contract.pin,
             checkout=contract.checkout(),
-            reads=list(contract.sources.values()),
+            reads=list(contract.sources.values())
+            + [str(path.relative_to(contract.checkout())) for path in additional],
         )
     }
     if contract.core.get("pin"):
@@ -346,6 +418,7 @@ int {prefix}_compute(void*raw,const merlin_staged_kernel_invocation*i,unsigned s
         Path(__file__),
         Path(split_vme.__file__),
         Path(backend.__file__),
+        Path(admit.__code__.co_filename),
         contract.contract_path,
         Path(cc),
         Path(runtime_include) / "merlin_staged_kernel.h",
@@ -356,6 +429,7 @@ int {prefix}_compute(void*raw,const merlin_staged_kernel_invocation*i,unsigned s
         *map(Path, derived.sources.values()),
         *contract.config_scala(),
         *contract.mixin_scala(),
+        *additional,
     ]
     provenance = {
         "schema": "iris.outlined_split_vme.v1",
@@ -366,8 +440,9 @@ int {prefix}_compute(void*raw,const merlin_staged_kernel_invocation*i,unsigned s
         "selected_worker_slot_mask": slot_mask,
         "selected_physical_hart_mask": mask,
         "source_shape": [m, n, k],
-        "numeric_contract": "closed zero-seeded signedI8×signedI8 wrappingI32",
-        "layout": layout.to_dict(),
+        "numeric_contract": numeric_contract,
+        "staged_numeric_format": _format,
+        "layout": layout.to_dict() if _format == "i8_i32" else split_vme.record(layout),
         "state_size_observation": str(observed),
         "commands": commands,
         "controller_cflags": list(controller_cflags),
@@ -379,7 +454,9 @@ int {prefix}_compute(void*raw,const merlin_staged_kernel_invocation*i,unsigned s
         "controller_objects": [str(path) for path in objects[:2]],
         "required_worker_initialization": "pinned thread owns Zephyr iris_vme_enable context before ARM; no arbitrary migration",
         "integrated_packing_shim_used": False,
-        "arithmetic_source": "existing public vme_split_compute + registered vme_gemm_2x2_bias",
+        "arithmetic_source": "existing public vme_split_compute + registered vme_gemm_2x2_bias"
+        if _format == "i8_i32"
+        else "source-derived native packed FP8 tile primitive; no scale/bias/input quantizer",
         "hardware_correctness_qualified": False,
         "full_model_admission": False,
         "physical_busy": None,
@@ -390,6 +467,13 @@ int {prefix}_compute(void*raw,const merlin_staged_kernel_invocation*i,unsigned s
         "source_pins_all_match": all(verdict.ok for verdict in verifications.values()),
         "source_image_association_qualified": False,
     }
+    if _format != "i8_i32" and not provenance["source_pins_all_match"]:
+        (work / "source-refusal.json").write_text(
+            json.dumps(provenance, indent=2) + "\n"
+        )
+        raise ValueError(
+            "FP8 staged source pins do not match the declared arithmetic/ISA revision"
+        )
     value = PreparedStagedKernel(
         hashlib.sha256(source_text.encode()).hexdigest(),
         header,

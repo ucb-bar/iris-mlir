@@ -156,3 +156,10 @@ def staged_rvv_kernel_api():
     from .lower import outlined_rvv
 
     return outlined_rvv
+
+
+def staged_fp8_kernel_api():
+    """Explicit finite typed-E4M3FN split provider; no implicit FP32 rewrite."""
+    from .lower import outlined_fp8
+
+    return outlined_fp8

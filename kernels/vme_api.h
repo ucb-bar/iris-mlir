@@ -93,6 +93,19 @@ static inline size_t vme_vsettk(size_t atk)
 #define VME_MM_U_S(t, vs2, vs1) VME_MM_U_U(t, vs2, vs1)
 #define VME_MM_S_S(t, vs2, vs1) VME_MM_S_U(t, vs2, vs1)
 
+/* FP8 uses the independently RTL-derived SF_MM_FP8 word. The same rd[0] bit
+ * now selects A=E5M2; vtype.altfmt selects B=E5M2. Clear means OCP E4M3. */
+#define VME_MM_E4_E4(t, vs2, vs1) asm volatile(VME_SF_MM_FP8(VME_MT(t), VME_V(vs1), VME_V(vs2)) ::: "memory")
+#define VME_MM_E5_E4(t, vs2, vs1) asm volatile(VME_SF_MM_FP8(VME_MTB(t), VME_V(vs1), VME_V(vs2)) ::: "memory")
+#define VME_MM_E4_E5(t, vs2, vs1) VME_MM_E4_E4(t, vs2, vs1)
+#define VME_MM_E5_E5(t, vs2, vs1) VME_MM_E5_E4(t, vs2, vs1)
+
+/* Packed FP8 is a distinct ABI from the signed-byte/I32 kernels. These are
+ * encoded byte operands and raw FP32 accumulation; scale/bias stay outside. */
+#ifndef VME_FP8_KERNEL
+#define VME_FP8_KERNEL(name) void name(float *c, const uint8_t *at, const uint8_t *b, size_t m, size_t n, size_t k)
+#endif
+
 /* ---- tile state --------------------------------------------------------------------------------------- */
 
 #define VME_VTZERO(t) asm volatile(VME_SF_VTZERO_T(VME_MT(t)) ::: "memory")

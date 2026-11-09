@@ -101,7 +101,9 @@ class UnitContract:
             if p.is_file()
         ]
 
-    def vector_params(self, config: str) -> dict[str, int]:
+    def vector_params(
+        self, config: str, *, enable_flag: str | None = None
+    ) -> dict[str, int]:
         """``{vLen, dLen}`` of the vector unit in ``config`` whose params ENABLE this unit."""
         from merlin.targetgen.rtl import matrix_isa
 
@@ -115,7 +117,7 @@ class UnitContract:
             ),
             params_text=self.source("params").read_text(encoding="utf-8"),
             params_object=str(d["params_object"]),
-            enable_flag=str(d["enable_flag"]),
+            enable_flag=enable_flag or str(d["enable_flag"]),
         )
         if "vLen" not in got or "dLen" not in got:
             raise ValueError(

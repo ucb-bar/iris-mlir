@@ -26,7 +26,7 @@
       "path": "contracts/matrix_units.yaml",
       "source": "saturn@vme 536774b, rocket-chip@fc745a8, riscv-isa-sim@f90d5af",
       "change": "derivation entry points (declaration names) and register-operand layouts with their sources",
-      "sha256": "fe5f040ec447f1a439b90b6a889c8cd93389fc0baf539e9df26afa8a7fdf06ad"
+      "sha256": "ea77231bfc1048dfec0ad5a3532e0d893b5cb0d2bdff5dfd2c2040b959a41291"
     },
     {
       "path": "src/iris/lower/vme_kernel.py",
@@ -38,13 +38,13 @@
       "path": "src/iris/lower/vme_shim.py",
       "source": "this package",
       "change": "VME contract, encoding, and object builder extracted from Merlin into this package; shared descriptor ABI remains in Merlin; explicit frozen Iris descriptor dispatch before the legacy Zvt route",
-      "sha256": "0ebc671f05eb081c18850fc3b3bb9a3f0c2fb8d098655854efcdf8a0f06e8808"
+      "sha256": "169c951813aecd7152070d60ce1b4ae2e7e41dbf90f191eee6d07cc7512cd24e"
     },
     {
       "path": "src/iris/backend.py",
       "source": "this package",
       "change": "plugin adapter for Merlin MatrixRouting, formatted without behavior change",
-      "sha256": "c25ab5ae8eff2e6d212a7e2dfc8ae1bf2db717cda587c60dde0b96dc1674f834"
+      "sha256": "8b9951f6dc6eed74ed854ee8d2796ed15de7d385db7fec37b7046e6ac5e5f402"
     },
     {
       "path": "kernels/kernels.yaml",
@@ -56,7 +56,7 @@
       "path": "kernels/vme_api.h",
       "source": "saturn@vme 536774b benchmarks/common/vme.h, vme_gemm.h",
       "change": "vme.h API names over the generated saturn_vme.h; no instruction words",
-      "sha256": "c6a7a22d932e7e8dd18c4df8d1c9ff063fcff2d3c61214d4a6d7bb24b9b4671d"
+      "sha256": "285adb524910f6d6006f16ce89fa2a81dce950c05777e3bb1d20f53396e05b88"
     },
     {
       "path": "kernels/vme_gemm_2x2_bias.c",
@@ -116,7 +116,7 @@
       "path": "contracts/streaming_support_pins.json",
       "source": "Iris provider authored; RVV panel API @250e93e726f373810776bd5113939e51c4162cad; existing matrix unit contract/derived geometry",
       "change": "Opt-in signed-I8 streaming window schedule and strict tests; no default, hardware timing or physical utilization claim",
-      "sha256": "dcfa140935870b7dc354b1e7f8a2cb716428142fc8f7515c60ebe5539ee05b68"
+      "sha256": "9e9e109206715c3964f8081872ed8eb27c1fde37f4a7c7eae6b8bb64ebea7bf5"
     },
     {
       "path": "kernels/vme_gemm_1x2_reuse.c",
@@ -141,6 +141,54 @@
       "source": "Iris provider authored; existing RTL-derived INT8 primitive ABI and pinned RVV panel API",
       "change": "Default-off direct K-major preparation, static shape/workspace preference, and functional checks; no benchmark results or timing claims",
       "sha256": "0db4f15e850b6f907d87905b3237651e44f72095ac3ac6250cbeb4dce8c550f5"
+    },
+    {
+      "path": "src/iris/lower/outlined_fp8.py",
+      "source": "saturn536774bd4c5e3bcd7813a4a0dc72fc87e5818532; rocket-chipfc745a8c377fdbf1d278eea81da9ac47b4b5fbc0; chipyardb4542facf6cc9457f6e358e8f80a8b3a0ff5df19; generic staged ABI owned by Merlin",
+      "change": "explicit finite typed E4M3FN/FP32 staged source contract; scalar controller layout preparation, compute-only native primitive and bit-preserving finish; no automatic numeric/routing policy or hardware qualification",
+      "sha256": "53c3a589ca2d9ca2716469140b9a4e96d9ea7e386bfbad53aa973daa6ec6406a"
+    },
+    {
+      "path": "src/iris/lower/split_fp8.py",
+      "source": "saturn536774bd4c5e3bcd7813a4a0dc72fc87e5818532; rocket-chipfc745a8c377fdbf1d278eea81da9ac47b4b5fbc0; chipyardb4542facf6cc9457f6e358e8f80a8b3a0ff5df19; generic staged ABI owned by Merlin",
+      "change": "explicit finite typed E4M3FN/FP32 staged source contract; scalar controller layout preparation, compute-only native primitive and bit-preserving finish; no automatic numeric/routing policy or hardware qualification",
+      "sha256": "c84697a3fd3027c4827d884d9a348adac6687b47f5537a230be5f452ad4b0678"
+    },
+    {
+      "path": "kernels/vme_fp8_split.h",
+      "source": "saturn536774bd4c5e3bcd7813a4a0dc72fc87e5818532; rocket-chipfc745a8c377fdbf1d278eea81da9ac47b4b5fbc0; chipyardb4542facf6cc9457f6e358e8f80a8b3a0ff5df19; generic staged ABI owned by Merlin",
+      "change": "explicit finite typed E4M3FN/FP32 staged source contract; scalar controller layout preparation, compute-only native primitive and bit-preserving finish; no automatic numeric/routing policy or hardware qualification",
+      "sha256": "d3883523b42b821e57532f7a44ef122dfc2229af9da71ced762e52ce24431918"
+    },
+    {
+      "path": "kernels/vme_fp8_split_prepare.c",
+      "source": "saturn536774bd4c5e3bcd7813a4a0dc72fc87e5818532; rocket-chipfc745a8c377fdbf1d278eea81da9ac47b4b5fbc0; chipyardb4542facf6cc9457f6e358e8f80a8b3a0ff5df19; generic staged ABI owned by Merlin",
+      "change": "explicit finite typed E4M3FN/FP32 staged source contract; scalar controller layout preparation, compute-only native primitive and bit-preserving finish; no automatic numeric/routing policy or hardware qualification",
+      "sha256": "0d0c9ce20d0924be0193eabdf894656b10f6a82e4452463a131df618b61a37f4"
+    },
+    {
+      "path": "kernels/vme_fp8_split_compute.c",
+      "source": "saturn536774bd4c5e3bcd7813a4a0dc72fc87e5818532; rocket-chipfc745a8c377fdbf1d278eea81da9ac47b4b5fbc0; chipyardb4542facf6cc9457f6e358e8f80a8b3a0ff5df19; generic staged ABI owned by Merlin",
+      "change": "explicit finite typed E4M3FN/FP32 staged source contract; scalar controller layout preparation, compute-only native primitive and bit-preserving finish; no automatic numeric/routing policy or hardware qualification",
+      "sha256": "d83ac3839f10ad6587f30c4dada86488bff8ab02ba264628db1cd25d2186c1c6"
+    },
+    {
+      "path": "kernels/vme_gemm_fp8.c",
+      "source": "saturn536774bd4c5e3bcd7813a4a0dc72fc87e5818532; rocket-chipfc745a8c377fdbf1d278eea81da9ac47b4b5fbc0; chipyardb4542facf6cc9457f6e358e8f80a8b3a0ff5df19; generic staged ABI owned by Merlin",
+      "change": "explicit finite typed E4M3FN/FP32 staged source contract; scalar controller layout preparation, compute-only native primitive and bit-preserving finish; no automatic numeric/routing policy or hardware qualification",
+      "sha256": "974c9c2b010639427dab7744ce6154478e49beb25aee2f5e3d246b4ba1e7e008"
+    },
+    {
+      "path": "tests/lowering/test_outlined_fp8.py",
+      "source": "saturn536774bd4c5e3bcd7813a4a0dc72fc87e5818532; rocket-chipfc745a8c377fdbf1d278eea81da9ac47b4b5fbc0; chipyardb4542facf6cc9457f6e358e8f80a8b3a0ff5df19; generic staged ABI owned by Merlin",
+      "change": "explicit finite typed E4M3FN/FP32 staged source contract; scalar controller layout preparation, compute-only native primitive and bit-preserving finish; no automatic numeric/routing policy or hardware qualification",
+      "sha256": "1ee3e5d3d9d3897f4d8880022d862556e09189f750b877f7f90115d54d612cee"
+    },
+    {
+      "path": "docs/staged_fp8.md",
+      "source": "saturn536774bd4c5e3bcd7813a4a0dc72fc87e5818532; rocket-chipfc745a8c377fdbf1d278eea81da9ac47b4b5fbc0; chipyardb4542facf6cc9457f6e358e8f80a8b3a0ff5df19; generic staged ABI owned by Merlin",
+      "change": "explicit finite typed E4M3FN/FP32 staged source contract; scalar controller layout preparation, compute-only native primitive and bit-preserving finish; no automatic numeric/routing policy or hardware qualification",
+      "sha256": "a549b82a9ba691da6618aa7a9456a7956eb1ffb211dec7ff822b001df924b331"
     }
   ],
   "generated": {

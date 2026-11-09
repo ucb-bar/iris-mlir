@@ -69,6 +69,7 @@ units:
       matrix_types: opuMatrixTypes       # Seq of (SEW, TWIDEN) the unit accepts
       params_object: VectorParams        # where a vector unit's params objects are declared
       enable_flag: useOpu                # the params flag that puts the unit on a vector unit
+      fp8_enable_flag: useMxOPU          # source flag instantiating the FP8 FMA cells
       # derived name -> the vme.h macro or function whose .insn states the same instruction
       crosscheck_pairs:
         SF_MM_INT: VME_MM_S_U
@@ -95,6 +96,7 @@ units:
     # Which instruction plays which role in the kernel (a fact about the kernel, so stated).
     kernel_roles:
       matmul: SF_MM_INT
+      matmul_fp8: SF_MM_FP8
       zero: SF_VTZERO_T
       readout: SF_VTMV_V_T
       release: SF_VTDISCARD
@@ -102,6 +104,21 @@ units:
       set_n: SF_VSETTN
       set_m: SF_VSETTM
       set_k: SF_VSETTK
+
+    # Sequential per-cell FP32 FMA, preserving reduction order (k, row, col):
+    # Saturn 536774bd4c5e3bcd7813a4a0dc72fc87e5818532, exu/OuterProductUnit.scala
+    # OuterProductCell and backend/OuterProductSequencer.scala. A's format uses
+    # rd[0], B's uses vtype.altfmt; the exact same fields also select INT8 signs.
+    fp8:
+      formats: [e4m3, e5m2]
+      accumulator: f32
+      reduction: sequential_fma
+      rounding: frm
+      scale_bias: outside_primitive
+      sources:
+        cell: src/main/scala/exu/OuterProductUnit.scala
+        sequencer: src/main/scala/backend/OuterProductSequencer.scala
+        conversion: src/main/scala/exu/fp/fp8ToE5M3.scala
 
     # Positions inside REGISTER operands (the Zvt draft's operand formats), with where each is stated.
     operand_layout:
