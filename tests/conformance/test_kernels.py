@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_the_registry_names_the_generated_default_and_the_port():
-    from merlin.kernels import matrix_kernels as MK
+    from merlin.compiler.selection import kernels as MK
 
     reg = MK.load_registry(ROOT)
     assert reg.header == "saturn_vme.h" and reg.header_prefix == "VME"
@@ -57,12 +57,13 @@ def headers(tmp_path):
         pytest.skip("MERLIN_CHIPYARD_IRIS with the saturn_vme sources is not configured")
     if shutil.which("cc") is None:
         pytest.skip("no host C preprocessor")
-    from merlin.kernels import matrix_kernels as MK
+    from merlin.compiler.selection import kernels as MK
+    from merlin.compiler.backend.headers import unit_header
     from merlin.targetgen.plugins import load_module
 
     plugin = load_module(ROOT, "matrix_lowering.py", package_name="iris_test_api")
     (tmp_path / "saturn_vme.h").write_text(
-        MK.unit_header(plugin, unit="saturn_vme", config="IrisConfig", header="saturn_vme.h", prefix="VME")
+        unit_header(plugin, unit="saturn_vme", config="IrisConfig", header="saturn_vme.h", prefix="VME")
     )
     shutil.copy(ROOT / "kernels" / "vme_api.h", tmp_path / "vme_api.h")
     (tmp_path / "author").mkdir()

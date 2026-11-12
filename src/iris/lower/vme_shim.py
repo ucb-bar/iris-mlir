@@ -5,7 +5,7 @@ Every hardware fact comes from the selected package contract and its pinned sour
 * the encoding derivation and its cross-checks: :mod:`merlin.targetgen.rtl.matrix_isa`, fed the
   declaration names in ``contracts/matrix_units.yaml``;
 * the descriptor-ABI bridge, operand pack and scalar fallback around the kernel:
-  :mod:`merlin.kernels.matrix_shim`;
+  :mod:`merlin.compiler.lower.matrix`;
 * the shipped/twin pair, its audit and the routing report: ``merlin.runtime.backends.matrix_image``.
 
 What this module adds is the reading of THIS unit's sources (which file declares what), its geometry from
@@ -383,7 +383,7 @@ def emit_translation_unit(
     ``kernel`` is a hand-written kernel already prepared by ``merlin.kernels.matrix_kernels``
     (``PreparedKernel``: the text to paste and its function); None emits the generated kernel.
     """
-    from merlin.kernels import matrix_shim
+    from merlin.compiler.lower import matrix as matrix_shim
 
     derived = _resolved(contract)
     if kernel is None:

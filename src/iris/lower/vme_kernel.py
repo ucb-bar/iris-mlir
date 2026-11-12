@@ -39,7 +39,7 @@ from typing import Any
 
 __all__ = ["KERNEL_FUNC", "OperandLayout", "VmeKernelSpec", "emit_kernel"]
 
-#: The kernel's C symbol, with the signature merlin.kernels.matrix_shim expects.
+#: The kernel's C symbol, with the signature merlin.compiler.lower.matrix expects.
 KERNEL_FUNC = "merlin_vme_gemm_i8"
 
 #: The instruction roles the kernel emits, by the contract's role names.
