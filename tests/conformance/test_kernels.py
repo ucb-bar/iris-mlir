@@ -28,7 +28,7 @@ def test_the_registry_names_the_generated_default_and_the_port():
 
 
 def test_the_kernel_header_facts_are_derived_values(monkeypatch):
-    from merlin.targetgen.plugins import load_module
+    from merlin.development.targetgen.plugins import load_module
 
     shim = load_module(ROOT, "vme_shim.py", package_name="iris_test_facts")
     contract = shim.load_contract("saturn_vme")
@@ -59,7 +59,7 @@ def headers(tmp_path):
         pytest.skip("no host C preprocessor")
     from merlin.compiler.selection import kernels as MK
     from merlin.compiler.backend.headers import unit_header
-    from merlin.targetgen.plugins import load_module
+    from merlin.development.targetgen.plugins import load_module
 
     plugin = load_module(ROOT, "matrix_lowering.py", package_name="iris_test_api")
     (tmp_path / "saturn_vme.h").write_text(

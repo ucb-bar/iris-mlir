@@ -29,7 +29,7 @@ def test_vme_ownership_is_declared_and_composed_against_pinned_rvv():
 
 
 def test_extension_preserves_selection_lowering_and_unknown_cost(monkeypatch, tmp_path):
-    from merlin.targetgen.plugins import load_module
+    from merlin.development.targetgen.plugins import load_module
 
     extension = load_module(ROOT, "extension.py", package_name="iris_offer_contract")
     calls = []

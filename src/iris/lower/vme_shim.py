@@ -2,7 +2,7 @@
 
 Every hardware fact comes from the selected package contract and its pinned sources:
 
-* the encoding derivation and its cross-checks: :mod:`merlin.targetgen.rtl.matrix_isa`, fed the
+* the encoding derivation and its cross-checks: :mod:`merlin.development.targetgen.rtl.matrix_isa`, fed the
   declaration names in ``contracts/matrix_units.yaml``;
 * the descriptor-ABI bridge, operand pack and scalar fallback around the kernel:
   :mod:`merlin.compiler.lower.matrix`;
@@ -101,7 +101,7 @@ class UnitContract:
 
     def vector_params(self, config: str) -> dict[str, int]:
         """``{vLen, dLen}`` of the vector unit in ``config`` whose params ENABLE this unit."""
-        from merlin.targetgen.rtl import matrix_isa
+        from merlin.development.targetgen.rtl import matrix_isa
 
         d = self.declarations
         cfg_text = "\n".join(p.read_text(encoding="utf-8") for p in self.config_scala())
@@ -133,7 +133,7 @@ class UnitContract:
 
     def matrix_types(self) -> list[tuple[int, int]]:
         """``[(sew, widen)]`` the RTL accepts as matrix configurations (e.g. ``def opuMatrixTypes``)."""
-        from merlin.targetgen.rtl.matrix_isa import seq_int_tuples
+        from merlin.development.targetgen.rtl.matrix_isa import seq_int_tuples
 
         name = str(self.declarations["matrix_types"])
         out = [
@@ -151,7 +151,7 @@ class UnitContract:
 
     def kmax(self, sew: int, widen: int) -> int:
         """The reduction depth one matmul takes at ``(sew, widen)``, from the host core's ``kmax`` table."""
-        from merlin.targetgen.rtl.matrix_isa import match_case_table
+        from merlin.development.targetgen.rtl.matrix_isa import match_case_table
 
         table = match_case_table(
             self.core_source().read_text(encoding="utf-8"),
@@ -231,7 +231,7 @@ def derive_encodings(contract: UnitContract):
     Always against the unit author's ``vme.h``; also against the declared simulator's opcode table when its
     source checkout is present (a third source, and the one that says the simulator decodes the same words).
     """
-    from merlin.targetgen.rtl import matrix_isa
+    from merlin.development.targetgen.rtl import matrix_isa
 
     d = contract.declarations
     isa = matrix_isa.derive(
@@ -331,7 +331,7 @@ class VmeBuild:
     provenance: dict[str, Any] = field(default_factory=dict)
     gaps: tuple[str, ...] = ()
     #: Which kernel the routed calls run: the generated one, or a hand-written one from kernels/ with the
-    #: sha256 of every file compiled (merlin.kernels.matrix_kernels).
+    #: sha256 of every file compiled (merlin.analysis.kernels.matrix_kernels).
     kernel: dict[str, Any] = field(
         default_factory=lambda: dict(GENERATED_KERNEL_RECORD)
     )
@@ -380,7 +380,7 @@ def emit_translation_unit(
 ):
     """Derive, cross-check, emit: the kernel inside Merlin's generic descriptor-ABI shim.
 
-    ``kernel`` is a hand-written kernel already prepared by ``merlin.kernels.matrix_kernels``
+    ``kernel`` is a hand-written kernel already prepared by ``merlin.analysis.kernels.matrix_kernels``
     (``PreparedKernel``: the text to paste and its function); None emits the generated kernel.
     """
     from merlin.compiler.lower import matrix as matrix_shim
@@ -530,12 +530,12 @@ class VmeMatrixAdapter:
         return self.load_contract(unit).geometry(config)
 
     def selector(self, tile_edge: int):
-        from merlin.llvmlower import int8_contractions
+        from merlin.compiler.lower.model import int8_contractions
 
         return int8_contractions.tile_filling_selector(tile_edge)
 
     def rewrite_prepared_file(self, prepared, work, *, select, tile_edge):
-        from merlin.llvmlower import int8_contractions
+        from merlin.compiler.lower.model import int8_contractions
 
         return int8_contractions.rewrite_prepared_file(
             prepared,
@@ -547,7 +547,7 @@ class VmeMatrixAdapter:
         )
 
     def load_signatures(self, work):
-        from merlin.llvmlower import int8_contractions
+        from merlin.compiler.lower.model import int8_contractions
 
         return int8_contractions.load_sidecar(work, SIDECAR_NAME)
 

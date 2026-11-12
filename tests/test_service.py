@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from merlin.api import compile
 from merlin.compiler.request import CompileOptions, CompileRequest, Source
-from merlin.targetgen.plugins import load_module
+from merlin.development.targetgen.plugins import load_module
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = """builtin.module {

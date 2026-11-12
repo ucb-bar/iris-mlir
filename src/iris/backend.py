@@ -58,7 +58,7 @@ def build_object(
     kernel=None,
 ):
     """``kernel``: a hand-written kernel Merlin selected from ``kernels/kernels.yaml``
-    (``merlin.kernels.matrix_kernels.KernelChoice``); None builds the generated kernel exactly as before."""
+    (``merlin.analysis.kernels.matrix_kernels.KernelChoice``); None builds the generated kernel exactly as before."""
     extra = {} if kernel is None else {"kernel": kernel}
     return vme_shim.build_object(
         signatures,

@@ -6,7 +6,7 @@ from ..lower import vme_shim
 
 
 def rewrite(prepared, work, *, select, tile_edge):
-    from merlin.llvmlower import int8_contractions
+    from merlin.compiler.lower.model import int8_contractions
 
     return int8_contractions.rewrite_prepared_file(
         prepared,

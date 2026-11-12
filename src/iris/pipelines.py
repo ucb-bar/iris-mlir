@@ -14,6 +14,6 @@ def rewrite_prepared_file(prepared, work, *, select, tile_edge):
 
 
 def load_signatures(work):
-    from merlin.llvmlower import int8_contractions
+    from merlin.compiler.lower.model import int8_contractions
 
     return int8_contractions.load_sidecar(work, vme_shim.SIDECAR_NAME)

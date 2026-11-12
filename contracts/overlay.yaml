@@ -10,7 +10,7 @@
 #   * 512 KiB inclusive L2, 128 KiB SBUS scratchpad at 0x580000000, serial-TL DRAM at 0x80000000.
 #
 # The VME unit's encodings, tile edge, alignment and reduction depth are DERIVED from the RTL the
-# contract in contracts/matrix_units.yaml names (merlin.targetgen.rtl.matrix_isa), never stated here.
+# contract in contracts/matrix_units.yaml names (merlin.development.targetgen.rtl.matrix_isa), never stated here.
 
 remove:
   - provenance

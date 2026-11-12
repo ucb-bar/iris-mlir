@@ -8,7 +8,7 @@
 # ADDRESSES of the facts, and they live here so that a second unit is a new block, not a new code path.
 #
 # WHAT IS NOT HERE: no encodings, no tile edges, no alignments, no kmax. Those are read out of the sources
-# named below (merlin.targetgen.rtl.matrix_isa) and a value that cannot be read fails closed. The one
+# named below (merlin.development.targetgen.rtl.matrix_isa) and a value that cannot be read fails closed. The one
 # block of values below, `operand_layout`, is positions inside REGISTER operands (Zvt draft operand
 # formats), each with the source that states it; the shipped image's run on the zvt simulator exercises
 # every one of them.

@@ -61,7 +61,7 @@ compute_units:
   - matmul
   - elementwise
   requant:
-    ref: merlin.llvmlower.passes_quant_int
+    ref: merlin.compiler.lower.model.passes_quant_int
   scaling: per_channel
 - name: vme
   kind: spatial

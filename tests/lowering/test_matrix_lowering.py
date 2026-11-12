@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[2]
 @pytest.fixture
 def adapter(monkeypatch):
     monkeypatch.setenv("MERLIN_TARGET_PATH", str(ROOT))
-    from merlin.targetgen.plugins import load_declared
+    from merlin.development.targetgen.plugins import load_declared
 
     module = load_declared("iris", "matrix_lowering")
     assert Path(module.__file__).resolve() == ROOT / "matrix_lowering.py"
@@ -27,7 +27,7 @@ def adapter(monkeypatch):
 
 def _fake_encodings(spec_roles):
     """A synthetic table with distinct words per role. Test data only: the real one is derived."""
-    from merlin.targetgen.rtl.matrix_isa import MaskedEncoding
+    from merlin.development.targetgen.rtl.matrix_isa import MaskedEncoding
 
     out = {}
     for i, name in enumerate(sorted(spec_roles.values())):
@@ -48,7 +48,7 @@ def _fake_encodings(spec_roles):
 def _spec():
     import yaml
 
-    from merlin.targetgen.plugins import load_module
+    from merlin.development.targetgen.plugins import load_module
 
     shim = load_module(ROOT, "vme_shim.py", package_name="iris_test")
     block = yaml.safe_load((ROOT / "contracts" / "matrix_units.yaml").read_text())["units"]["saturn_vme"]
@@ -205,7 +205,7 @@ def pinned_sources():
 
 
 def test_derivation_cross_checks_and_geometry_follow_the_enabled_unit(pinned_sources):
-    from merlin.targetgen.plugins import load_module
+    from merlin.development.targetgen.plugins import load_module
 
     shim = load_module(ROOT, "vme_shim.py", package_name="iris_test_rtl")
     contract = shim.load_contract("saturn_vme")

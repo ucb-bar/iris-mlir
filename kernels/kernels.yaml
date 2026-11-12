@@ -2,7 +2,7 @@
 #
 # Select one with `--matrix-kernel <name>` (examples/iris/run.sh op|kernel-test, or MERLIN_MATRIX_KERNEL),
 # or `--matrix-kernel path/to/file.c[:function]` for a file outside this directory. Unselected, the unit's
-# `defaults:` entry is used. Read by merlin.kernels.matrix_kernels.
+# `defaults:` entry is used. Read by merlin.analysis.kernels.matrix_kernels.
 #
 # Every hand-written kernel:
 #   * defines   void <function>(int32_t *c, const int8_t *at, const int8_t *b, const int32_t *bias,
